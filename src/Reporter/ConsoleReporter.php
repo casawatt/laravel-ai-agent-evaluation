@@ -2,9 +2,9 @@
 
 namespace Casawatt\LaravelAiAgentEvaluation\Reporter;
 
-use Illuminate\Support\Collection;
 use Casawatt\LaravelAiAgentEvaluation\EvaluationResult;
 use Casawatt\LaravelAiAgentEvaluation\EvaluationSuite;
+use Illuminate\Support\Collection;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableSeparator;
 use Symfony\Component\Console\Output\OutputInterface;

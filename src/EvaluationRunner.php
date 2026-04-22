@@ -2,12 +2,12 @@
 
 namespace Casawatt\LaravelAiAgentEvaluation;
 
-use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
-use Laravel\Ai\Responses\Data\Usage;
 use Casawatt\LaravelAiAgentEvaluation\Attributes\EvaluationCase;
 use Casawatt\LaravelAiAgentEvaluation\Attributes\With;
 use Casawatt\LaravelAiAgentEvaluation\Storage\StorageInterface;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
+use Laravel\Ai\Responses\Data\Usage;
 use PHPUnit\Framework\AssertionFailedError;
 use ReflectionClass;
 use ReflectionMethod;

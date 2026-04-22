@@ -1,12 +1,12 @@
 <?php
 
+use Casawatt\LaravelAiAgentEvaluation\EvaluationRunner;
+use Casawatt\LaravelAiAgentEvaluation\Tests\Fixtures\FakeAgent;
 use Illuminate\Support\Facades\File;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Responses\AgentResponse;
 use Laravel\Ai\Responses\Data\Meta;
 use Laravel\Ai\Responses\Data\Usage;
-use Casawatt\LaravelAiAgentEvaluation\EvaluationRunner;
-use Casawatt\LaravelAiAgentEvaluation\Tests\Fixtures\FakeAgent;
 
 beforeEach(function () {
     $this->tempPath = sys_get_temp_dir().'/eval-runner-test-'.uniqid();

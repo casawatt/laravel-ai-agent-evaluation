@@ -1,9 +1,9 @@
 <?php
 
+use Casawatt\LaravelAiAgentEvaluation\AssertableStructuredResponse;
 use Laravel\Ai\Responses\Data\Meta;
 use Laravel\Ai\Responses\Data\Usage;
 use Laravel\Ai\Responses\StructuredAgentResponse;
-use Casawatt\LaravelAiAgentEvaluation\AssertableStructuredResponse;
 
 function makeStructuredResponse(array $structured, ?Usage $usage = null): AssertableStructuredResponse
 {

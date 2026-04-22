@@ -1,10 +1,10 @@
 <?php
 
+use Casawatt\LaravelAiAgentEvaluation\AssertableResponse;
 use Laravel\Ai\Responses\AgentResponse;
 use Laravel\Ai\Responses\Data\Meta;
 use Laravel\Ai\Responses\Data\ToolCall;
 use Laravel\Ai\Responses\Data\Usage;
-use Casawatt\LaravelAiAgentEvaluation\AssertableResponse;
 
 function makeResponse(string $text = 'Hello World', ?Usage $usage = null, array $toolCalls = []): AssertableResponse
 {

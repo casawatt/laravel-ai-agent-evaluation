@@ -2,8 +2,8 @@
 
 namespace Casawatt\LaravelAiAgentEvaluation\Tests;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Casawatt\LaravelAiAgentEvaluation\LaravelAiAgentEvaluationServiceProvider;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra

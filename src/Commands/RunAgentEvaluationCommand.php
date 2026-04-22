@@ -2,14 +2,14 @@
 
 namespace Casawatt\LaravelAiAgentEvaluation\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Collection;
 use Casawatt\LaravelAiAgentEvaluation\EvaluationResult;
 use Casawatt\LaravelAiAgentEvaluation\EvaluationRunner;
 use Casawatt\LaravelAiAgentEvaluation\Reporter\ConsoleReporter;
 use Casawatt\LaravelAiAgentEvaluation\ResultStatus;
 use Casawatt\LaravelAiAgentEvaluation\Storage\StorageInterface;
 use Casawatt\LaravelAiAgentEvaluation\SuiteBuilder;
+use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 
 class RunAgentEvaluationCommand extends Command
 {
