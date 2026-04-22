@@ -36,6 +36,9 @@ class EvaluationSuite
                 $totalWeight = (float) $results->sum(fn (EvaluationResult $r) => $r->totalWeight());
                 $passedWeight = (float) $results->sum(fn (EvaluationResult $r) => $r->passedWeight());
 
+                $totalCost = $results->sum(fn (EvaluationResult $r) => $r->cost() ?? 0);
+                $hasCost = $results->contains(fn (EvaluationResult $r) => $r->cost() !== null);
+
                 return [
                     'passed' => $passed,
                     'failed' => $total - $passed,
@@ -47,6 +50,7 @@ class EvaluationSuite
                     'total_weight' => $totalWeight,
                     'passed_weight' => $passedWeight,
                     'score' => $totalWeight > 0 ? (float) ($passedWeight / $totalWeight) : null,
+                    'total_cost' => $hasCost ? (float) $totalCost : null,
                 ];
             });
     }
@@ -54,6 +58,11 @@ class EvaluationSuite
     public function hasWeightedAssertions(): bool
     {
         return $this->results->contains(fn (EvaluationResult $r) => $r->hasWeightedAssertions());
+    }
+
+    public function hasPricing(): bool
+    {
+        return $this->results->contains(fn (EvaluationResult $r) => $r->variant->hasPricing());
     }
 
     public function totalPassed(): int

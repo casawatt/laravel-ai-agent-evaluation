@@ -26,7 +26,7 @@ class RunAgentEvaluationCommand extends Command
     public function handle(StorageInterface $storage): int
     {
         $path = config('ai-agent-evaluation.path', base_path('agent-evaluations'));
-        $concurrency = (int) $this->option('concurrency') ?: (int) config('ai-agent-evaluation.parallel', 1);
+        $concurrency = (int) $this->option('parallel') ?: (int) config('ai-agent-evaluation.parallel', 1);
 
         $runner = new EvaluationRunner($path);
 

@@ -102,3 +102,61 @@ it('reports all passed when no failures', function () {
 
     expect($suite->allPassed())->toBeTrue();
 });
+
+it('computes cost from variant pricing', function () {
+    $variant = new Variant(Lab::OpenAI, 'gpt-4o-mini');
+    $variant->pricing(inputPerMillion: 0.15, outputPerMillion: 0.60);
+
+    $result = new EvaluationResult(
+        evaluationName: 'TestEvaluation',
+        caseName: 'case_one',
+        caseDescription: 'case one',
+        variant: $variant,
+        status: ResultStatus::Passed,
+        latencySeconds: 0.5,
+        usage: new Usage(promptTokens: 1_000_000, completionTokens: 500_000),
+    );
+
+    // 1M input * $0.15/M + 500K output * $0.60/M = $0.15 + $0.30 = $0.45
+    expect($result->cost())->toBe(0.45);
+});
+
+it('returns null cost when variant has no pricing', function () {
+    $variant = new Variant(Lab::OpenAI, 'gpt-4o-mini');
+
+    $result = new EvaluationResult(
+        evaluationName: 'TestEvaluation',
+        caseName: 'case_one',
+        caseDescription: 'case one',
+        variant: $variant,
+        status: ResultStatus::Passed,
+        latencySeconds: 0.5,
+        usage: new Usage(promptTokens: 100, completionTokens: 50),
+    );
+
+    expect($result->cost())->toBeNull();
+});
+
+it('includes cost in provider summaries', function () {
+    $suite = new EvaluationSuite('TestEvaluation', 'App\\Agent');
+
+    $variant = new Variant(Lab::OpenAI, 'gpt-4o-mini');
+    $variant->pricing(inputPerMillion: 0.15, outputPerMillion: 0.60);
+
+    $suite->add(new EvaluationResult(
+        evaluationName: 'TestEvaluation',
+        caseName: 'case_one',
+        caseDescription: 'case one',
+        variant: $variant,
+        status: ResultStatus::Passed,
+        latencySeconds: 0.5,
+        usage: new Usage(promptTokens: 100, completionTokens: 50),
+    ));
+
+    $summaries = $suite->providerSummaries();
+    $openai = $summaries->get('openai/gpt-4o-mini');
+
+    expect($openai['total_cost'])->toBeFloat();
+    expect($openai['total_cost'])->toBeGreaterThan(0);
+    expect($suite->hasPricing())->toBeTrue();
+});

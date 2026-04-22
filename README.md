@@ -1,6 +1,6 @@
 # Laravel AI Agent Evaluation
 
-Evaluate your [Laravel AI SDK](https://laravel.com/docs/13.x/ai-sdk) agents across multiple providers and models. Compare performance, accuracy, and cost — like [Promptfoo](https://www.promptfoo.dev/) but for Laravel.
+Evaluate your [Laravel AI SDK](https://laravel.com/docs/13.x/ai-sdk) agents across multiple providers and models. Compare performance, accuracy, and cost.
 
 ## Installation
 
@@ -19,32 +19,32 @@ php artisan vendor:publish --tag="laravel-ai-agent-evaluation-config"
 ### 1. Create an evaluation
 
 ```bash
-php artisan make:agent-evaluation SaleCoach
+php artisan make:agent-evaluation SalesCoach
 ```
 
 This creates:
 
 ```
 agent-evaluations/
-    SaleCoachEvaluation.php
+    SalesCoachEvaluation.php
     results/
         .gitignore
 ```
 
 ### 2. Define your evaluation
 
-Edit `agent-evaluations/SaleCoachEvaluation.php`:
+Edit `agent-evaluations/SalesCoachEvaluation.php`:
 
 ```php
 <?php
 
 use Laravel\Ai\Enums\Lab;
-use Opousset\LaravelAiAgentEvaluation\Attributes\EvaluationCase;
-use Opousset\LaravelAiAgentEvaluation\Evaluation;
+use Casawatt\LaravelAiAgentEvaluation\Attributes\EvaluationCase;
+use Casawatt\LaravelAiAgentEvaluation\Evaluation;
 
 return new class extends Evaluation
 {
-    protected string $agent = \App\Ai\Agents\SaleCoach::class;
+    protected string $agent = \App\Ai\Agents\SalesCoach::class;
 
     public function setUp(): void
     {
@@ -82,7 +82,7 @@ return new class extends Evaluation
 php artisan agent-evaluation
 ```
 
-Each case is run against every variant. Results are displayed in the console and saved as JSON.
+Each case is run against every variant. Results are displayed in the console and persisted to SQLite.
 
 ## Variants
 
@@ -115,7 +115,71 @@ public function setUp(): void
 }
 ```
 
+Instructions can also be loaded from a file using the `file://` prefix — useful for long or complex system prompts:
+
+```php
+$this->variant(Lab::OpenAI, 'gpt-4o-mini')
+    ->label('Strict coach')
+    ->instruction('file://prompts/strict-coach.md');
+```
+
+Relative paths are resolved from the evaluations directory (`agent-evaluations/` by default). Absolute paths are used as-is.
+
 This lets you compare the **same model with different instructions** — useful for prompt engineering and evaluating system prompt variations.
+
+### Cost Tracking
+
+Add pricing to variants to track cost per evaluation. Pricing is defined in dollars per million tokens:
+
+```php
+$this->variant(Lab::OpenAI, 'gpt-4o-mini')
+    ->pricing(inputPerMillion: 0.15, outputPerMillion: 0.60);
+
+$this->variant(Lab::Anthropic, 'claude-sonnet-4-20250514')
+    ->pricing(inputPerMillion: 3.00, outputPerMillion: 15.00);
+```
+
+When at least one variant has pricing, the variant summary table shows a **Cost** column. Variants without pricing show `—`.
+
+#### Cost Resolvers
+
+Instead of setting pricing on each variant, you can register cost resolvers that automatically look up pricing by provider and model. Resolvers are tried in order — the first non-null result wins. Explicit `pricing()` on a variant always takes precedence.
+
+The package ships with two built-in resolvers:
+
+| Resolver | Source | Scope |
+|---|---|---|
+| `OpenRouterCostResolver` | [OpenRouter API](https://openrouter.ai/api/v1/models) | `Lab::OpenRouter` variants only |
+| `ModelsDevCostResolver` | [models.dev](https://models.dev/api.json) | Any provider (OpenAI, Anthropic, Mistral, etc.) |
+
+Enable them in `config/ai-agent-evaluation.php`:
+
+```php
+'cost_resolvers' => [
+    \Casawatt\LaravelAiAgentEvaluation\CostResolvers\OpenRouterCostResolver::class,
+    \Casawatt\LaravelAiAgentEvaluation\CostResolvers\ModelsDevCostResolver::class,
+],
+```
+
+Each API is called once per run and cached in memory. Resolvers are tried in order — place more specific resolvers first.
+
+You can create your own resolvers by implementing `CostResolverInterface`:
+
+```php
+use Casawatt\LaravelAiAgentEvaluation\CostResolverInterface;
+use Casawatt\LaravelAiAgentEvaluation\Price;
+use Laravel\Ai\Enums\Lab;
+
+class MyCostResolver implements CostResolverInterface
+{
+    public function resolve(Lab|string $provider, string $model): ?Price
+    {
+        // Return null if this resolver doesn't handle this provider
+        // Return a Price with per-million-token costs otherwise
+        return new Price(inputPerMillion: 0.15, outputPerMillion: 0.60);
+    }
+}
+```
 
 Custom providers (not in the `Lab` enum) work as long as they are configured in your `config/ai.php`.
 
@@ -219,7 +283,7 @@ The variant summary table shows a **Score** column with weighted percentages:
 Use `#[With('methodName')]` to feed multiple data sets into a single case — like PHPUnit's `#[DataProvider]`. The method can load data from anywhere: arrays, models, files, APIs.
 
 ```php
-use Opousset\LaravelAiAgentEvaluation\Attributes\With;
+use Casawatt\LaravelAiAgentEvaluation\Attributes\With;
 
 #[EvaluationCase]
 #[With('capitalCities')]
@@ -259,7 +323,7 @@ public function customerQuestions(): array
 Some providers or models may not support certain features (e.g. tool use). You can skip cases conditionally using `skip()` or `skipWhen()`:
 
 ```php
-use Opousset\LaravelAiAgentEvaluation\Variant;
+use Casawatt\LaravelAiAgentEvaluation\Variant;
 
 #[EvaluationCase]
 public function uses_tools(): void
@@ -312,16 +376,13 @@ The `--parallel` CLI option overrides the config value. Set to `1` for sequentia
 php artisan agent-evaluation
 
 # Filter by evaluation name
-php artisan agent-evaluation --filter=SaleCoach
+php artisan agent-evaluation --filter=SalesCoach
 
 # Filter by variant label
 php artisan agent-evaluation --variant=openai
 
 # Run cases in parallel (requires pcntl)
 php artisan agent-evaluation --parallel=4
-
-# Output raw JSON to stdout
-php artisan agent-evaluation --json
 
 # Resume an interrupted run (skip already-run cases)
 php artisan agent-evaluation --resume
@@ -337,8 +398,7 @@ Results are persisted to a SQLite database after each case completes — if the 
 ```php
 // config/ai-agent-evaluation.php
 'storage' => [
-    'enabled' => true,
-    'driver' => 'sqlite',
+    'driver' => 'sqlite', // sqlite, file
     'path' => storage_path('ai-agent-evaluation'),
 ],
 ```

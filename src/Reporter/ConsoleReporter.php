@@ -101,6 +101,7 @@ class ConsoleReporter
     private function renderProviderSummary(EvaluationSuite $suite): void
     {
         $hasWeights = $suite->hasWeightedAssertions();
+        $hasPricing = $suite->hasPricing();
 
         $table = new Table($this->output);
 
@@ -109,6 +110,9 @@ class ConsoleReporter
             $headers[] = 'Score';
         }
         $headers = [...$headers, 'Avg Latency', 'Tokens In', 'Tokens Out'];
+        if ($hasPricing) {
+            $headers[] = 'Cost';
+        }
         $table->setHeaders($headers);
 
         $summaries = $suite->providerSummaries();
@@ -120,6 +124,7 @@ class ConsoleReporter
         $totalCompletionTokens = 0;
         $totalWeightSum = 0;
         $totalPassedWeightSum = 0;
+        $totalCost = 0;
         $providerCount = 0;
 
         foreach ($summaries as $label => $summary) {
@@ -140,6 +145,14 @@ class ConsoleReporter
             }
 
             $row = [...$row, $latency, number_format($summary['total_prompt_tokens']), number_format($summary['total_completion_tokens'])];
+
+            if ($hasPricing) {
+                $row[] = $summary['total_cost'] !== null
+                    ? $this->formatCost($summary['total_cost'])
+                    : '-';
+                $totalCost += $summary['total_cost'] ?? 0;
+            }
+
             $table->addRow($row);
 
             $totalPassed += $summary['passed'];
@@ -176,8 +189,21 @@ class ConsoleReporter
             '<options=bold>'.number_format($totalCompletionTokens).'</>',
         ];
 
+        if ($hasPricing) {
+            $summaryRow[] = '<options=bold>'.$this->formatCost($totalCost).'</>';
+        }
+
         $table->addRow($summaryRow);
         $table->render();
+    }
+
+    private function formatCost(float $cost): string
+    {
+        if ($cost < 0.01) {
+            return '$'.number_format($cost, 4);
+        }
+
+        return '$'.number_format($cost, 2);
     }
 
     private function formatLatency(float $seconds): string

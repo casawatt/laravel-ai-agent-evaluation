@@ -69,6 +69,16 @@ class EvaluationResult
         return $this->totalWeight() > 0;
     }
 
+    public function cost(): ?float
+    {
+        if ($this->usage === null || ! $this->variant->hasPricing()) {
+            return null;
+        }
+
+        return ($this->usage->promptTokens * $this->variant->price->inputPerMillion
+            + $this->usage->completionTokens * $this->variant->price->outputPerMillion) / 1_000_000;
+    }
+
     public function toStorageArray(): array
     {
         return [
@@ -79,6 +89,8 @@ class EvaluationResult
             'provider' => $this->variant->providerValue(),
             'model' => $this->variant->model,
             'instruction' => $this->variant->instruction,
+            'input_cost_per_million' => $this->variant->price?->inputPerMillion,
+            'output_cost_per_million' => $this->variant->price?->outputPerMillion,
             'status' => $this->status->value,
             'failure_message' => $this->failureMessage,
             'skip_reason' => $this->skipReason,

@@ -2,6 +2,7 @@
 
 use Casawatt\LaravelAiAgentEvaluation\EvaluationRunner;
 use Casawatt\LaravelAiAgentEvaluation\Tests\Fixtures\FakeAgent;
+use Casawatt\LaravelAiAgentEvaluation\Variant;
 use Illuminate\Support\Facades\File;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Responses\AgentResponse;
@@ -375,3 +376,61 @@ it('expands cases with #[With] data provider', function () {
     expect($caseNames)->toContain('responds_with_greeting (french)');
     expect($caseNames)->toContain('simple_case');
 });
+
+it('loads variant instruction from file:// absolute path', function () {
+    $instructionFile = $this->tempPath.'/prompts/strict-coach.md';
+    mkdir(dirname($instructionFile), 0755, true);
+    file_put_contents($instructionFile, 'You are a strict sales coach.');
+
+    $variant = new Variant(Lab::OpenAI, 'gpt-4o-mini');
+    $variant->instruction('file://'.$instructionFile);
+
+    expect($variant->instruction)->toBe('You are a strict sales coach.');
+});
+
+it('loads variant instruction from file:// relative path', function () {
+    $instructionFile = $this->tempPath.'/prompts/coach.md';
+    mkdir(dirname($instructionFile), 0755, true);
+    file_put_contents($instructionFile, 'You are a coach.');
+
+    config()->set('ai-agent-evaluation.path', $this->tempPath);
+
+    writeEvaluation($this->tempPath.'/RelativeInstructionEvaluation.php', <<<'PHP'
+        <?php
+
+        use Laravel\Ai\Enums\Lab;
+        use Casawatt\LaravelAiAgentEvaluation\Attributes\EvaluationCase;
+        use Casawatt\LaravelAiAgentEvaluation\Evaluation;
+        use Casawatt\LaravelAiAgentEvaluation\Tests\Fixtures\FakeAgent;
+
+        return new class extends Evaluation
+        {
+            protected string $agent = FakeAgent::class;
+
+            public function setUp(): void
+            {
+                $this->variant(Lab::OpenAI, 'gpt-4o-mini')
+                    ->instruction('file://prompts/coach.md');
+            }
+
+            #[EvaluationCase]
+            public function it_works(): void
+            {
+                $this->agent(prompt: 'Hello')->assertNotEmpty();
+            }
+        };
+        PHP);
+
+    bindFakeAgent();
+
+    $runner = new EvaluationRunner($this->tempPath);
+    $suites = $runner->run(filter: 'RelativeInstruction');
+
+    $result = $suites->first()->results->first();
+    expect($result->variant->instruction)->toBe('You are a coach.');
+});
+
+it('throws when file:// instruction file does not exist', function () {
+    $variant = new Variant(Lab::OpenAI, 'gpt-4o-mini');
+    $variant->instruction('file://nonexistent/file.md');
+})->throws(InvalidArgumentException::class, 'Instruction file not found');

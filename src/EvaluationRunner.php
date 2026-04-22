@@ -63,6 +63,8 @@ class EvaluationRunner
 
             $evaluation->setUp();
 
+            $this->resolveCostForVariants($evaluation);
+
             $evaluations[$name] = [
                 'evaluation' => $evaluation,
                 'file' => $file->getRealPath(),
@@ -441,5 +443,32 @@ class EvaluationRunner
         }
 
         $storage->saveResult($runId, $result->resultKey(), $result->toStorageArray());
+    }
+
+    private function resolveCostForVariants(Evaluation $evaluation): void
+    {
+        /** @var array<class-string<CostResolverInterface>> $resolverClasses */
+        $resolverClasses = config('ai-agent-evaluation.cost_resolvers', []);
+
+        if ($resolverClasses === []) {
+            return;
+        }
+
+        $resolvers = array_map(fn (string $class) => app($class), $resolverClasses);
+
+        foreach ($evaluation->getVariants() as $variant) {
+            if ($variant->hasPricing()) {
+                continue;
+            }
+
+            foreach ($resolvers as $resolver) {
+                $price = $resolver->resolve($variant->provider, $variant->model);
+
+                if ($price !== null) {
+                    $variant->pricing($price->inputPerMillion, $price->outputPerMillion);
+                    break;
+                }
+            }
+        }
     }
 }
