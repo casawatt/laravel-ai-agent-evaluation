@@ -1,11 +1,11 @@
 <?php
 
-use Laravel\Ai\Enums\Lab;
-use Laravel\Ai\Responses\Data\Usage;
 use Casawatt\LaravelAiAgentEvaluation\EvaluationResult;
 use Casawatt\LaravelAiAgentEvaluation\EvaluationSuite;
 use Casawatt\LaravelAiAgentEvaluation\ResultStatus;
 use Casawatt\LaravelAiAgentEvaluation\Variant;
+use Laravel\Ai\Enums\Lab;
+use Laravel\Ai\Responses\Data\Usage;
 
 function makeSuiteWithResults(): EvaluationSuite
 {

@@ -68,4 +68,55 @@ class EvaluationResult
     {
         return $this->totalWeight() > 0;
     }
+
+    public function toStorageArray(): array
+    {
+        return [
+            'evaluation' => $this->evaluationName,
+            'case' => $this->caseName,
+            'description' => $this->caseDescription,
+            'variant' => $this->variantLabel(),
+            'provider' => $this->variant->providerValue(),
+            'model' => $this->variant->model,
+            'instruction' => $this->variant->instruction,
+            'status' => $this->status->value,
+            'failure_message' => $this->failureMessage,
+            'skip_reason' => $this->skipReason,
+            'latency_seconds' => $this->latencySeconds,
+            'usage' => $this->usage?->toArray(),
+            'response_text' => $this->responseText,
+            'score' => $this->hasWeightedAssertions() ? [
+                'passed_weight' => $this->passedWeight(),
+                'total_weight' => $this->totalWeight(),
+                'assertions' => $this->assertionResults?->map(fn ($a) => [
+                    'assertion' => $a->assertion,
+                    'passed' => $a->passed,
+                    'weight' => $a->weight,
+                    'message' => $a->message,
+                ])->all(),
+            ] : null,
+        ];
+    }
+
+    public function withoutException(): self
+    {
+        if ($this->exception === null) {
+            return $this;
+        }
+
+        return new self(
+            evaluationName: $this->evaluationName,
+            caseName: $this->caseName,
+            caseDescription: $this->caseDescription,
+            variant: $this->variant,
+            status: $this->status,
+            failureMessage: $this->failureMessage,
+            skipReason: $this->skipReason,
+            latencySeconds: $this->latencySeconds,
+            usage: $this->usage,
+            responseText: $this->responseText,
+            assertionResults: $this->assertionResults,
+            reused: $this->reused,
+        );
+    }
 }

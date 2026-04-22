@@ -2,14 +2,15 @@
 
 namespace Casawatt\LaravelAiAgentEvaluation\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Collection;
 use Casawatt\LaravelAiAgentEvaluation\EvaluationResult;
 use Casawatt\LaravelAiAgentEvaluation\EvaluationRunner;
 use Casawatt\LaravelAiAgentEvaluation\Reporter\ConsoleReporter;
 use Casawatt\LaravelAiAgentEvaluation\ResultStatus;
 use Casawatt\LaravelAiAgentEvaluation\Storage\StorageInterface;
 use Casawatt\LaravelAiAgentEvaluation\SuiteBuilder;
+use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
+use Spatie\Fork\Fork;
 
 class RunAgentEvaluationCommand extends Command
 {
@@ -17,13 +18,15 @@ class RunAgentEvaluationCommand extends Command
         {--filter= : Filter evaluations by name}
         {--variant= : Filter to a specific variant by label}
         {--resume : Resume the latest evaluation, skipping already-run cases}
-        {--retry-errors : Retry only error results from the latest evaluation}';
+        {--retry-errors : Retry only error results from the latest evaluation}
+        {--parallel=0 : Number of cases to run in parallel (requires pcntl)}';
 
     protected $description = 'Run AI agent evaluations';
 
     public function handle(StorageInterface $storage): int
     {
         $path = config('ai-agent-evaluation.path', base_path('agent-evaluations'));
+        $concurrency = (int) $this->option('concurrency') ?: (int) config('ai-agent-evaluation.parallel', 1);
 
         $runner = new EvaluationRunner($path);
 
@@ -33,6 +36,19 @@ class RunAgentEvaluationCommand extends Command
         $this->components->info('Running agent evaluations...');
         $this->output->writeln('');
 
+        if ($concurrency > 1) {
+            return $this->handleParallel($runner, $storage, $runId, $previousResults, $concurrency);
+        }
+
+        return $this->handleSequential($runner, $storage, $runId, $previousResults);
+    }
+
+    private function handleSequential(
+        EvaluationRunner $runner,
+        StorageInterface $storage,
+        string $runId,
+        ?Collection $previousResults,
+    ): int {
         $passed = 0;
         $failed = 0;
         $skipped = 0;
@@ -42,30 +58,97 @@ class RunAgentEvaluationCommand extends Command
             filter: $this->option('filter'),
             variantFilter: $this->option('variant'),
             onCaseComplete: function (EvaluationResult $result) use (&$passed, &$failed, &$skipped, &$reused) {
-                if ($result->reused) {
-                    $this->output->write('<fg=gray>-</>');
-                    $reused++;
-                } elseif ($result->skipped()) {
-                    $this->output->write('<fg=yellow>S</>');
-                    $skipped++;
-                } elseif ($result->passed()) {
-                    $this->output->write('<fg=green>.</>');
-                    $passed++;
-                } elseif ($result->errored()) {
-                    $this->output->write('<fg=red>E</>');
-                    $failed++;
-                } else {
-                    $this->output->write('<fg=red>F</>');
-                    $failed++;
-                }
+                $this->reportProgress($result, $passed, $failed, $skipped, $reused);
             },
             previousResults: $previousResults,
             storage: $storage,
             runId: $runId,
         );
 
+        return $this->renderResults($storage, $runId, $passed, $failed, $skipped, $reused);
+    }
+
+    private function handleParallel(
+        EvaluationRunner $runner,
+        StorageInterface $storage,
+        string $runId,
+        ?Collection $previousResults,
+        int $concurrency,
+    ): int {
+        [$workUnits, $reusedResults] = $runner->discoverWorkUnits(
+            filter: $this->option('filter'),
+            variantFilter: $this->option('variant'),
+            previousResults: $previousResults,
+        );
+
+        if ($workUnits->isEmpty() && $reusedResults->isEmpty()) {
+            $this->components->warn('No evaluations found.');
+
+            return self::SUCCESS;
+        }
+
+        $passed = 0;
+        $failed = 0;
+        $skipped = 0;
+        $reused = 0;
+
+        // Report and persist reused results
+        foreach ($reusedResults as $result) {
+            $storage->saveResult($runId, $result->resultKey(), $result->toStorageArray());
+            $this->reportProgress($result, $passed, $failed, $skipped, $reused);
+        }
+
+        if ($workUnits->isNotEmpty()) {
+            $closures = $workUnits->map(
+                fn ($unit) => fn () => $runner->executeSingleWorkUnit($unit),
+            )->all();
+
+            $results = Fork::new()
+                ->concurrent($concurrency)
+                ->run(...$closures);
+
+            foreach ($results as $result) {
+                $storage->saveResult($runId, $result->resultKey(), $result->toStorageArray());
+                $this->reportProgress($result, $passed, $failed, $skipped, $reused);
+            }
+        }
+
+        return $this->renderResults($storage, $runId, $passed, $failed, $skipped, $reused);
+    }
+
+    private function reportProgress(EvaluationResult $result, int &$passed, int &$failed, int &$skipped, int &$reused): void
+    {
+        if ($result->reused) {
+            $this->output->write('<fg=gray>-</>');
+            $reused++;
+        } elseif ($result->skipped()) {
+            $this->output->write('<fg=yellow>S</>');
+            $skipped++;
+        } elseif ($result->passed()) {
+            $this->output->write('<fg=green>.</>');
+            $passed++;
+        } elseif ($result->errored()) {
+            $this->output->write('<fg=red>E</>');
+            $failed++;
+        } else {
+            $this->output->write('<fg=red>F</>');
+            $failed++;
+        }
+    }
+
+    private function renderResults(
+        StorageInterface $storage,
+        string $runId,
+        int $passed,
+        int $failed,
+        int $skipped,
+        int $reused,
+    ): int {
         $this->output->writeln('');
         $this->output->writeln('');
+
+        $allResults = $storage->getResults($runId);
+        $suites = SuiteBuilder::fromStorageResults($allResults);
 
         if ($suites->isEmpty()) {
             $this->components->warn('No evaluations found.');
@@ -73,11 +156,8 @@ class RunAgentEvaluationCommand extends Command
             return self::SUCCESS;
         }
 
-        $allResults = $storage->getResults($runId);
-        $completeSuites = SuiteBuilder::fromStorageResults($allResults);
-
         $consoleReporter = new ConsoleReporter($this->output);
-        $consoleReporter->render($completeSuites);
+        $consoleReporter->render($suites);
 
         $this->components->info("Results saved to run {$runId}.");
 
