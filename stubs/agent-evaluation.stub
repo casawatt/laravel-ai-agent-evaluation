@@ -1,0 +1,22 @@
+<?php
+
+use Laravel\Ai\Enums\Lab;
+use Casawatt\LaravelAiAgentEvaluation\Attributes\EvaluationCase;
+use Casawatt\LaravelAiAgentEvaluation\Evaluation;
+
+return new class extends Evaluation
+{
+    protected string $agent = \App\Ai\Agents\{{ agent }}::class;
+
+    public function setUp(): void
+    {
+        $this->variant(Lab::OpenAI, 'gpt-4o-mini');
+    }
+
+    #[EvaluationCase]
+    public function it_responds(): void
+    {
+        $this->agent(prompt: 'Hello')
+            ->assertNotEmpty();
+    }
+};
