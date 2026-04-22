@@ -208,7 +208,7 @@ class RunAgentEvaluationCommand extends Command
         return [new Collection($storage->getResults($latestRunId)), $latestRunId];
     }
 
-    private function renderFailures($suites): void
+    private function renderFailures(Collection $suites): void
     {
         $failures = $suites->flatMap(fn ($s) => $s->results->filter(
             fn (EvaluationResult $r) => $r->failed() || $r->errored(),

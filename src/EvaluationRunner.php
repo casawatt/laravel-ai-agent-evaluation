@@ -55,6 +55,8 @@ class EvaluationRunner
                 continue;
             }
 
+            // Each evaluation file must return an Evaluation instance (typically via anonymous class).
+            // Named classes risk duplicate-definition fatal errors if two files share a class name.
             $evaluation = require $file->getRealPath();
 
             if (! $evaluation instanceof Evaluation) {

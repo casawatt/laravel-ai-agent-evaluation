@@ -2,10 +2,10 @@
 
 namespace Casawatt\LaravelAiAgentEvaluation;
 
-class Price
+readonly class Price
 {
     public function __construct(
-        public readonly float $inputPerMillion,
-        public readonly float $outputPerMillion,
+        public float $inputPerMillion,
+        public float $outputPerMillion,
     ) {}
 }
