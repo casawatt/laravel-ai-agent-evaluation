@@ -35,12 +35,6 @@ return [
         ModelsDevCostResolver::class,
     ],
 
-    /*
-     * Number of cases to run in parallel. Requires the pcntl extension.
-     * Set to 1 for sequential execution. Override per-run with --parallel.
-     */
-    'parallel' => 1,
-
     'storage' => [
         'driver' => 'file', // sqlite, file
         'path' => storage_path('ai-agent-evaluation'),
