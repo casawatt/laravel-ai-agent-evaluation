@@ -22,6 +22,7 @@ class EvaluationResult
         /** @var Collection<int, AssertionResult>|null */
         public readonly ?Collection $assertionResults = null,
         public readonly bool $reused = false,
+        public readonly ?string $agentClass = null,
     ) {}
 
     public function resultKey(): string
@@ -83,6 +84,7 @@ class EvaluationResult
     {
         return [
             'evaluation' => $this->evaluationName,
+            'agent' => $this->agentClass,
             'case' => $this->caseName,
             'description' => $this->caseDescription,
             'variant' => $this->variantLabel(),
@@ -129,6 +131,7 @@ class EvaluationResult
             responseText: $this->responseText,
             assertionResults: $this->assertionResults,
             reused: $this->reused,
+            agentClass: $this->agentClass,
         );
     }
 }

@@ -93,6 +93,7 @@ class EvaluationRunner
         foreach ($this->discoverWithPaths($filter) as $name => $entry) {
             $evaluation = $entry['evaluation'];
             $filePath = $entry['file'];
+            $agentClass = $evaluation->getAgentClass();
             $variants = $evaluation->getVariants();
             $cases = $this->extractCases($evaluation);
 
@@ -124,6 +125,7 @@ class EvaluationRunner
                                 responseText: $result->responseText,
                                 assertionResults: $result->assertionResults,
                                 reused: true,
+                                agentClass: $agentClass,
                             ));
 
                             continue;
@@ -139,6 +141,7 @@ class EvaluationRunner
                             args: $args,
                             dataSetLabel: $dataSetLabel,
                             resultKey: $resultKey,
+                            agentClass: $agentClass,
                         ));
                     }
                 }
@@ -164,6 +167,7 @@ class EvaluationRunner
                 variant: $unit->variant,
                 status: ResultStatus::Error,
                 failureMessage: 'Evaluation file did not return an Evaluation instance.',
+                agentClass: $unit->agentClass,
             );
         }
 
@@ -171,9 +175,10 @@ class EvaluationRunner
         $evaluation->setCurrentVariant($unit->variant);
         $evaluation->resetResponses();
 
+        $agentClass = $unit->agentClass ?? $evaluation->getAgentClass();
         $method = (new ReflectionClass($evaluation))->getMethod($unit->methodName);
 
-        return $this->executeCase($evaluation, $method, $unit->variant, $unit->evaluationName, $unit->args, $unit->dataSetLabel)
+        return $this->executeCase($evaluation, $method, $unit->variant, $unit->evaluationName, $unit->args, $unit->dataSetLabel, $agentClass)
             ->withoutException();
     }
 
@@ -207,7 +212,7 @@ class EvaluationRunner
 
                 foreach ($cases as $case) {
                     foreach ($this->expandCase($evaluation, $case) as [$args, $dataSetLabel]) {
-                        $result = $this->executeCaseOrReuse($evaluation, $case, $variant, $name, $previousResults, $args, $dataSetLabel);
+                        $result = $this->executeCaseOrReuse($evaluation, $case, $variant, $name, $previousResults, $args, $dataSetLabel, $agentClass);
                         $suite->add($result);
                         $this->persistResult($storage, $runId, $result);
 
@@ -312,6 +317,7 @@ class EvaluationRunner
         ?Collection $previousResults,
         array $args = [],
         ?string $dataSetLabel = null,
+        ?string $agentClass = null,
     ): EvaluationResult {
         $caseName = $this->getCaseName($case, $dataSetLabel);
         $resultKey = $evaluationName.'::'.$caseName.'::'.$variant->label;
@@ -333,10 +339,11 @@ class EvaluationRunner
                 responseText: $result->responseText,
                 assertionResults: $result->assertionResults,
                 reused: true,
+                agentClass: $agentClass,
             );
         }
 
-        return $this->executeCase($evaluation, $case, $variant, $evaluationName, $args, $dataSetLabel);
+        return $this->executeCase($evaluation, $case, $variant, $evaluationName, $args, $dataSetLabel, $agentClass);
     }
 
     private function executeCase(
@@ -346,6 +353,7 @@ class EvaluationRunner
         string $evaluationName,
         array $args = [],
         ?string $dataSetLabel = null,
+        ?string $agentClass = null,
     ): EvaluationResult {
         $evaluation->resetResponses();
 
@@ -375,6 +383,7 @@ class EvaluationRunner
                 usage: $usage,
                 responseText: $lastText,
                 assertionResults: $assertionResults->isNotEmpty() ? $assertionResults : null,
+                agentClass: $agentClass,
             );
         } catch (SkippedException $e) {
             return new EvaluationResult(
@@ -384,6 +393,7 @@ class EvaluationRunner
                 variant: $variant,
                 status: ResultStatus::Skipped,
                 skipReason: $e->getMessage(),
+                agentClass: $agentClass,
             );
         } catch (AssertionFailedError $e) {
             $responses = $evaluation->getResponses();
@@ -400,6 +410,7 @@ class EvaluationRunner
                 latencySeconds: $latency ?: null,
                 usage: $usage,
                 exception: $e,
+                agentClass: $agentClass,
             );
         } catch (\Throwable $e) {
             $responses = $evaluation->getResponses();
@@ -416,6 +427,7 @@ class EvaluationRunner
                 latencySeconds: $latency ?: null,
                 usage: $usage,
                 exception: $e,
+                agentClass: $agentClass,
             );
         }
     }

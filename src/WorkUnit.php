@@ -14,5 +14,6 @@ readonly class WorkUnit
         public array $args,
         public ?string $dataSetLabel,
         public string $resultKey,
+        public ?string $agentClass = null,
     ) {}
 }
