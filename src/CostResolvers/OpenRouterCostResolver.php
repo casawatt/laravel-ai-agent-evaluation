@@ -14,7 +14,9 @@ class OpenRouterCostResolver implements CostResolverInterface
 
     public function resolve(Lab|string $provider, string $model): ?Price
     {
-        if ($provider !== Lab::OpenRouter) {
+        $providerKey = $provider instanceof Lab ? $provider->value : $provider;
+
+        if ($providerKey !== Lab::OpenRouter->value) {
             return null;
         }
 

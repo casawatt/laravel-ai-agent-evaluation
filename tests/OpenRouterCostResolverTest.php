@@ -89,6 +89,16 @@ it('handles free models with zero pricing', function () {
     expect($price->outputPerMillion)->toBe(0.0);
 });
 
+it('accepts string provider', function () {
+    fakeOpenRouterResponse();
+
+    $resolver = new OpenRouterCostResolver;
+    $price = $resolver->resolve('openrouter', 'openai/gpt-4o-mini');
+
+    expect($price)->not->toBeNull();
+    expect($price->inputPerMillion)->toBe(0.15);
+});
+
 it('caches API response across multiple resolve calls', function () {
     fakeOpenRouterResponse();
 

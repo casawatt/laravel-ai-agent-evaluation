@@ -33,7 +33,9 @@ class ScalewayCostResolver implements CostResolverInterface
 
     public function resolve(Lab|string $provider, string $model): ?Price
     {
-        if ($provider !== 'scaleway') {
+        $providerKey = $provider instanceof Lab ? $provider->value : $provider;
+
+        if ($providerKey !== 'scaleway') {
             return null;
         }
 
