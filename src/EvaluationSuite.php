@@ -57,6 +57,58 @@ class EvaluationSuite
         return $this->results->contains(fn (EvaluationResult $r) => $r->hasWeightedAssertions());
     }
 
+    public function hasMetrics(): bool
+    {
+        return $this->results
+            ->flatMap(fn (EvaluationResult $r) => $r->assertionResults ?? collect())
+            ->contains(fn (AssertionResult $a) => $a->metric !== null);
+    }
+
+    public function metricSummaries(): Collection
+    {
+        /** @var array<string, array<string, array{passed_weight: float, total_weight: float}>> $data */
+        $data = [];
+
+        foreach ($this->results as $result) {
+            if ($result->skipped() || $result->assertionResults === null) {
+                continue;
+            }
+
+            $variant = $result->variantLabel();
+
+            foreach ($result->assertionResults as $assertion) {
+                if ($assertion->metric === null) {
+                    continue;
+                }
+
+                $data[$assertion->metric][$variant] ??= ['passed_weight' => 0.0, 'total_weight' => 0.0];
+                $data[$assertion->metric][$variant]['total_weight'] += $assertion->weight;
+
+                if ($assertion->passed) {
+                    $data[$assertion->metric][$variant]['passed_weight'] += $assertion->weight;
+                }
+            }
+        }
+
+        $summaries = new Collection;
+
+        foreach ($data as $metric => $variants) {
+            $variantSummaries = new Collection;
+
+            foreach ($variants as $variant => $v) {
+                $variantSummaries->put($variant, [
+                    'passed_weight' => $v['passed_weight'],
+                    'total_weight' => $v['total_weight'],
+                    'score' => $v['total_weight'] > 0 ? $v['passed_weight'] / $v['total_weight'] : null,
+                ]);
+            }
+
+            $summaries->put($metric, $variantSummaries);
+        }
+
+        return $summaries;
+    }
+
     public function hasPricing(): bool
     {
         return $this->results->contains(fn (EvaluationResult $r) => $r->variant->hasPricing());

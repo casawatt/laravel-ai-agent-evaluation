@@ -99,6 +99,7 @@ class EvaluationResult
             'latency_seconds' => $this->latencySeconds,
             'usage' => $this->usage?->toArray(),
             'response_text' => $this->responseText,
+            'cost' => $this->cost(),
             'score' => $this->hasWeightedAssertions() ? [
                 'passed_weight' => $this->passedWeight(),
                 'total_weight' => $this->totalWeight(),
@@ -106,6 +107,7 @@ class EvaluationResult
                     'assertion' => $a->assertion,
                     'passed' => $a->passed,
                     'weight' => $a->weight,
+                    'metric' => $a->metric,
                     'message' => $a->message,
                 ])->all(),
             ] : null,

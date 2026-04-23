@@ -278,6 +278,42 @@ The variant summary table shows a **Score** column with weighted percentages:
 | mistral/sm   | 2/4 (50.0%)   | 1.3/3.3 (39.4%)   | 210ms       | 180       | 2,500      |
 ```
 
+## Metrics
+
+Every assertion accepts an optional `metric` tag to group assertions by quality dimension (e.g. accuracy, completeness, safety). Metrics aggregate scores across all cases within a suite, giving you a per-dimension breakdown by variant.
+
+```php
+#[EvaluationCase]
+public function knows_capital(): void
+{
+    $this->agent(prompt: 'What is the capital of France?')
+        ->assertContains('Paris', metric: 'accuracy')
+        ->assertMinLength(20, metric: 'completeness')
+        ->assertMaxLength(200, metric: 'completeness');
+}
+
+#[EvaluationCase]
+public function explains_concept(): void
+{
+    $this->agent(prompt: 'Explain gravity in simple terms')
+        ->assertContains('force', metric: 'accuracy')
+        ->assertMinLength(50, metric: 'completeness')
+        ->assertNotContains('kill', metric: 'safety');
+}
+```
+
+When any assertion has a metric, the console output includes an additional **Metrics** table:
+
+```
+| Metric        | openai/gpt-4o-mini | anthropic/claude-haiku |
+|---------------|--------------------|------------------------|
+| accuracy      | 2 / 2 (100.0%)     | 1 / 2 (50.0%)         |
+| completeness  | 3 / 3 (100.0%)     | 2 / 3 (66.7%)         |
+| safety        | 1 / 1 (100.0%)     | 1 / 1 (100.0%)        |
+```
+
+Metrics are persisted to storage alongside each assertion result, so they are available for web reporting without re-running evaluations.
+
 ## Data Providers
 
 Use `#[With('methodName')]` to feed multiple data sets into a single case — like PHPUnit's `#[DataProvider]`. The method can load data from anywhere: arrays, models, files, APIs.
@@ -415,11 +451,13 @@ Each result has a `status`: `passed`, `failed`, `skipped`, or `error`. Assertion
 
 ## Results
 
-Console output includes two tables:
+Console output includes up to three tables:
 
 **Test Matrix** — each case x each variant with PASS/FAIL/ERROR/SKIP, latency, and token count.
 
-**Variant Summary** — aggregated pass rate, average latency, and total tokens per variant.
+**Variant Summary** — aggregated pass rate, average latency, total tokens, and cost per variant.
+
+**Metrics** *(when assertions use `metric:`)* — per-metric score breakdown by variant.
 
 ## Testing
 

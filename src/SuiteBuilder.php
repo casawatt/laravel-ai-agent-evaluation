@@ -53,6 +53,7 @@ class SuiteBuilder
                     passed: $a['passed'] ?? true,
                     weight: $a['weight'] ?? 1.0,
                     message: $a['message'] ?? null,
+                    metric: $a['metric'] ?? null,
                 ),
             );
         }

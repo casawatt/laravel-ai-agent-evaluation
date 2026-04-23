@@ -25,6 +25,11 @@ class ConsoleReporter
             $this->output->writeln('');
             $this->renderProviderSummary($suite);
             $this->output->writeln('');
+
+            if ($suite->hasMetrics()) {
+                $this->renderMetricsSummary($suite);
+                $this->output->writeln('');
+            }
         }
     }
 
@@ -192,6 +197,49 @@ class ConsoleReporter
         }
 
         $table->addRow($summaryRow);
+        $table->render();
+    }
+
+    private function renderMetricsSummary(EvaluationSuite $suite): void
+    {
+        $metricSummaries = $suite->metricSummaries();
+
+        $providers = $suite->results
+            ->reject(fn (EvaluationResult $r) => $r->skipped())
+            ->map(fn (EvaluationResult $r) => $r->variantLabel())
+            ->unique()
+            ->values();
+
+        $table = new Table($this->output);
+
+        $headers = ['Metric'];
+        foreach ($providers as $provider) {
+            $headers[] = $this->shortenProviderLabel($provider);
+        }
+        $table->setHeaders($headers);
+
+        foreach ($metricSummaries as $metric => $variantScores) {
+            $row = [$metric];
+
+            foreach ($providers as $provider) {
+                $data = $variantScores->get($provider);
+
+                if ($data === null) {
+                    $row[] = '-';
+
+                    continue;
+                }
+
+                $score = $data['score'] !== null
+                    ? number_format($data['score'] * 100, 1).'%'
+                    : '-';
+
+                $row[] = "{$data['passed_weight']} / {$data['total_weight']} ({$score})";
+            }
+
+            $table->addRow($row);
+        }
+
         $table->render();
     }
 
