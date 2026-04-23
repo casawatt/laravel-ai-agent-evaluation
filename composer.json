@@ -1,13 +1,23 @@
 {
     "name": "casawatt/laravel-ai-agent-evaluation",
-    "description": "Laravel AI Agent Evaluation",
+    "description": "Evaluate Laravel AI SDK agents across providers and models for performance, accuracy, and cost",
+    "type": "library",
     "keywords": [
-        "Olivier",
         "laravel",
-        "laravel-ai-agent-evaluation"
+        "ai",
+        "agent",
+        "evaluation",
+        "testing",
+        "benchmark",
+        "llm",
+        "comparison"
     ],
     "homepage": "https://github.com/casawatt/laravel-ai-agent-evaluation",
     "license": "MIT",
+    "support": {
+        "issues": "https://github.com/casawatt/laravel-ai-agent-evaluation/issues",
+        "source": "https://github.com/casawatt/laravel-ai-agent-evaluation"
+    },
     "authors": [
         {
             "name": "Olivier Pousset",
@@ -40,8 +50,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Casawatt\\LaravelAiAgentEvaluation\\": "src/",
-            "Casawatt\\LaravelAiAgentEvaluation\\Database\\Factories\\": "database/factories/"
+            "Casawatt\\LaravelAiAgentEvaluation\\": "src/"
         }
     },
     "autoload-dev": {
@@ -69,10 +78,7 @@
         "laravel": {
             "providers": [
                 "Casawatt\\LaravelAiAgentEvaluation\\LaravelAiAgentEvaluationServiceProvider"
-            ],
-            "aliases": {}
+            ]
         }
-    },
-    "minimum-stability": "dev",
-    "prefer-stable": true
+    }
 }

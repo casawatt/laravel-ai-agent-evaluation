@@ -5,7 +5,7 @@ Evaluate your [Laravel AI SDK](https://laravel.com/docs/13.x/ai-sdk) agents acro
 ## Installation
 
 ```bash
-composer require casawatt/laravel-ai-agent-evaluation
+composer require --dev casawatt/laravel-ai-agent-evaluation
 ```
 
 Publish the config file:
