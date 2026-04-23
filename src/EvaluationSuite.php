@@ -29,28 +29,25 @@ class EvaluationSuite
             ->map(function (Collection $results) {
                 $passed = $results->filter(fn (EvaluationResult $r) => $r->passed())->count();
                 $total = $results->count();
-                $avgLatency = (float) ($results->avg('latencySeconds') ?? 0);
-                $totalPromptTokens = (int) $results->sum(fn (EvaluationResult $r) => $r->usage->promptTokens ?? 0);
-                $totalCompletionTokens = (int) $results->sum(fn (EvaluationResult $r) => $r->usage->completionTokens ?? 0);
 
                 $totalWeight = (float) $results->sum(fn (EvaluationResult $r) => $r->totalWeight());
                 $passedWeight = (float) $results->sum(fn (EvaluationResult $r) => $r->passedWeight());
-
-                $totalCost = $results->sum(fn (EvaluationResult $r) => $r->cost() ?? 0);
-                $hasCost = $results->contains(fn (EvaluationResult $r) => $r->cost() !== null);
 
                 return [
                     'passed' => $passed,
                     'failed' => $total - $passed,
                     'total' => $total,
                     'pass_rate' => $total > 0 ? (float) ($passed / $total) : 0.0,
-                    'avg_latency' => $avgLatency,
-                    'total_prompt_tokens' => $totalPromptTokens,
-                    'total_completion_tokens' => $totalCompletionTokens,
+                    'avg_latency' => (float) ($results->avg('latencySeconds') ?? 0),
+                    'total_latency' => (float) ($results->sum('latencySeconds') ?? 0),
+                    'total_prompt_tokens' => (int) $results->sum(fn (EvaluationResult $r) => $r->usage->promptTokens ?? 0),
+                    'total_completion_tokens' => (int) $results->sum(fn (EvaluationResult $r) => $r->usage->completionTokens ?? 0),
                     'total_weight' => $totalWeight,
                     'passed_weight' => $passedWeight,
                     'score' => $totalWeight > 0 ? (float) ($passedWeight / $totalWeight) : null,
-                    'total_cost' => $hasCost ? (float) $totalCost : null,
+                    'total_cost' => $results->contains(fn (EvaluationResult $r) => $r->cost() !== null)
+                                    ? (float) $results->sum(fn (EvaluationResult $r) => $r->cost() ?? 0)
+                                    : null,
                 ];
             });
     }

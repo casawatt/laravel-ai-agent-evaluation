@@ -125,7 +125,6 @@ class ConsoleReporter
         $totalWeightSum = 0;
         $totalPassedWeightSum = 0;
         $totalCost = 0;
-        $providerCount = 0;
 
         foreach ($summaries as $label => $summary) {
             $passRate = number_format($summary['pass_rate'] * 100, 1);
@@ -157,18 +156,17 @@ class ConsoleReporter
 
             $totalPassed += $summary['passed'];
             $totalTests += $summary['total'];
-            $totalLatency += $summary['avg_latency'];
+            $totalLatency += $summary['total_latency'];
             $totalPromptTokens += $summary['total_prompt_tokens'];
             $totalCompletionTokens += $summary['total_completion_tokens'];
             $totalWeightSum += $summary['total_weight'];
             $totalPassedWeightSum += $summary['passed_weight'];
-            $providerCount++;
         }
 
         $table->addRow(new TableSeparator);
 
         $overallPassRate = $totalTests > 0 ? number_format(($totalPassed / $totalTests) * 100, 1) : '0.0';
-        $avgLatency = $providerCount > 0 ? $this->formatLatency($totalLatency / $providerCount) : '-';
+        $avgLatency = $totalTests > 0 ? $this->formatLatency($totalLatency / $totalTests) : '-';
 
         $summaryRow = [
             '<options=bold>Summary</>',
