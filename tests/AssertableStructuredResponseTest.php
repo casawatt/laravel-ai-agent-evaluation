@@ -105,6 +105,28 @@ it('records failure for assertMissingKey when present', function () {
     expect($r->getAssertionResults()->first()->passed)->toBeFalse();
 });
 
+it('passes assertHasKey with dot-notation', function () {
+    makeStructuredResponse(['user' => ['address' => ['city' => 'Paris']]])
+        ->assertHasKey('user.address.city');
+});
+
+it('records failure for assertHasKey with dot-notation when missing', function () {
+    $r = makeStructuredResponse(['user' => ['address' => ['city' => 'Paris']]])
+        ->assertHasKey('user.address.zip');
+    expect($r->getAssertionResults()->first()->passed)->toBeFalse();
+});
+
+it('passes assertMissingKey with dot-notation', function () {
+    makeStructuredResponse(['user' => ['address' => ['city' => 'Paris']]])
+        ->assertMissingKey('user.address.zip');
+});
+
+it('records failure for assertMissingKey with dot-notation when present', function () {
+    $r = makeStructuredResponse(['user' => ['address' => ['city' => 'Paris']]])
+        ->assertMissingKey('user.address.city');
+    expect($r->getAssertionResults()->first()->passed)->toBeFalse();
+});
+
 // --- assertCount ---
 
 it('passes assertCount', function () {

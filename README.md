@@ -213,8 +213,8 @@ Available automatically when your agent implements `HasStructuredOutput`. These 
 | `assertStructure(array $structure)` | Validates nested key structure (supports `*` wildcards) |
 | `assertPath(string $path, mixed $expected)` | Value at dot-notation path equals expected |
 | `assertPathContains(string $path, string $needle)` | String value at path contains the needle |
-| `assertHasKey(string $key)` | Top-level key exists |
-| `assertMissingKey(string $key)` | Top-level key does not exist |
+| `assertHasKey(string $key)` | Key exists (supports dot-notation) |
+| `assertMissingKey(string $key)` | Key does not exist (supports dot-notation) |
 | `assertCount(int $count)` | Top-level array has N entries |
 | `assertWhere(string $path, callable $callback)` | Value at path satisfies callback |
 

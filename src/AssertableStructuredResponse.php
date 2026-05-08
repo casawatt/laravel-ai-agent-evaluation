@@ -62,9 +62,8 @@ class AssertableStructuredResponse extends AssertableResponse
 
     public function assertHasKey(string $key, string $message = '', float $weight = 1.0, ?string $metric = null): self
     {
-        $this->runAssertion('assertHasKey', fn () => Assert::assertArrayHasKey(
-            $key,
-            $this->structuredResponse->structured,
+        $this->runAssertion('assertHasKey', fn () => Assert::assertTrue(
+            Arr::has($this->structuredResponse->structured, $key),
             $message ?: "Expected structured response to have key [{$key}].",
         ), $weight, $metric);
 
@@ -73,9 +72,8 @@ class AssertableStructuredResponse extends AssertableResponse
 
     public function assertMissingKey(string $key, string $message = '', float $weight = 1.0, ?string $metric = null): self
     {
-        $this->runAssertion('assertMissingKey', fn () => Assert::assertArrayNotHasKey(
-            $key,
-            $this->structuredResponse->structured,
+        $this->runAssertion('assertMissingKey', fn () => Assert::assertFalse(
+            Arr::has($this->structuredResponse->structured, $key),
             $message ?: "Expected structured response to not have key [{$key}].",
         ), $weight, $metric);
 
