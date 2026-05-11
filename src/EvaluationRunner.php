@@ -24,6 +24,17 @@ class EvaluationRunner
      */
     public function discover(?string $filter = null): array
     {
+        return array_map(
+            fn (array $entry) => $entry['evaluation'],
+            $this->discoverWithPaths($filter),
+        );
+    }
+
+    /**
+     * @return array<string, array{evaluation: Evaluation, file: string}> Keyed by evaluation name.
+     */
+    private function discoverWithPaths(?string $filter = null): array
+    {
         if (! is_dir($this->evaluationsPath)) {
             return [];
         }
@@ -52,10 +63,114 @@ class EvaluationRunner
 
             $evaluation->setUp();
 
-            $evaluations[$name] = $evaluation;
+            $evaluations[$name] = [
+                'evaluation' => $evaluation,
+                'file' => $file->getRealPath(),
+            ];
         }
 
         return $evaluations;
+    }
+
+    /**
+     * Discover all work units without executing them.
+     *
+     * @param  Collection<string, array>|null  $previousResults  Keyed by resultKey.
+     * @return array{Collection<int, WorkUnit>, Collection<int, EvaluationResult>}
+     */
+    public function discoverWorkUnits(
+        ?string $filter = null,
+        ?string $variantFilter = null,
+        ?Collection $previousResults = null,
+    ): array {
+        $workUnits = new Collection;
+        $reusedResults = new Collection;
+
+        foreach ($this->discoverWithPaths($filter) as $name => $entry) {
+            $evaluation = $entry['evaluation'];
+            $filePath = $entry['file'];
+            $variants = $evaluation->getVariants();
+            $cases = $this->extractCases($evaluation);
+
+            foreach ($variants as $variant) {
+                if ($variantFilter !== null && ! Str::contains($variant->label, $variantFilter, ignoreCase: true)) {
+                    continue;
+                }
+
+                foreach ($cases as $case) {
+                    foreach ($this->expandCase($evaluation, $case) as [$args, $dataSetLabel]) {
+                        $caseName = $this->getCaseName($case, $dataSetLabel);
+                        $caseDescription = $this->getCaseDescription($case, $dataSetLabel);
+                        $resultKey = $name.'::'.$caseName.'::'.$variant->label;
+
+                        if ($previousResults !== null && $previousResults->has($resultKey)) {
+                            $previous = $previousResults->get($resultKey);
+                            $result = SuiteBuilder::buildResult($previous, $name);
+
+                            $reusedResults->push(new EvaluationResult(
+                                evaluationName: $result->evaluationName,
+                                caseName: $result->caseName,
+                                caseDescription: $result->caseDescription,
+                                variant: $variant,
+                                status: $result->status,
+                                failureMessage: $result->failureMessage,
+                                skipReason: $result->skipReason,
+                                latencySeconds: $result->latencySeconds,
+                                usage: $result->usage,
+                                responseText: $result->responseText,
+                                assertionResults: $result->assertionResults,
+                                reused: true,
+                            ));
+
+                            continue;
+                        }
+
+                        $workUnits->push(new WorkUnit(
+                            evaluationFile: $filePath,
+                            evaluationName: $name,
+                            methodName: $case->getName(),
+                            caseName: $caseName,
+                            caseDescription: $caseDescription,
+                            variant: $variant,
+                            args: $args,
+                            dataSetLabel: $dataSetLabel,
+                            resultKey: $resultKey,
+                        ));
+                    }
+                }
+            }
+        }
+
+        return [$workUnits, $reusedResults];
+    }
+
+    /**
+     * Execute a single work unit in isolation.
+     * Loads a fresh Evaluation instance from the file.
+     */
+    public function executeSingleWorkUnit(WorkUnit $unit): EvaluationResult
+    {
+        $evaluation = require $unit->evaluationFile;
+
+        if (! $evaluation instanceof Evaluation) {
+            return new EvaluationResult(
+                evaluationName: $unit->evaluationName,
+                caseName: $unit->caseName,
+                caseDescription: $unit->caseDescription,
+                variant: $unit->variant,
+                status: ResultStatus::Error,
+                failureMessage: 'Evaluation file did not return an Evaluation instance.',
+            );
+        }
+
+        $evaluation->setUp();
+        $evaluation->setCurrentVariant($unit->variant);
+        $evaluation->resetResponses();
+
+        $method = (new ReflectionClass($evaluation))->getMethod($unit->methodName);
+
+        return $this->executeCase($evaluation, $method, $unit->variant, $unit->evaluationName, $unit->args, $unit->dataSetLabel)
+            ->withoutException();
     }
 
     /**
@@ -325,30 +440,6 @@ class EvaluationRunner
             return;
         }
 
-        $storage->saveResult($runId, $result->resultKey(), [
-            'evaluation' => $result->evaluationName,
-            'case' => $result->caseName,
-            'description' => $result->caseDescription,
-            'variant' => $result->variantLabel(),
-            'provider' => $result->variant->providerValue(),
-            'model' => $result->variant->model,
-            'instruction' => $result->variant->instruction,
-            'status' => $result->status->value,
-            'failure_message' => $result->failureMessage,
-            'skip_reason' => $result->skipReason,
-            'latency_seconds' => $result->latencySeconds,
-            'usage' => $result->usage?->toArray(),
-            'response_text' => $result->responseText,
-            'score' => $result->hasWeightedAssertions() ? [
-                'passed_weight' => $result->passedWeight(),
-                'total_weight' => $result->totalWeight(),
-                'assertions' => $result->assertionResults?->map(fn ($a) => [
-                    'assertion' => $a->assertion,
-                    'passed' => $a->passed,
-                    'weight' => $a->weight,
-                    'message' => $a->message,
-                ])->all(),
-            ] : null,
-        ]);
+        $storage->saveResult($runId, $result->resultKey(), $result->toStorageArray());
     }
 }

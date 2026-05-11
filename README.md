@@ -286,6 +286,25 @@ public function not_ready_yet(): void
 
 Skipped cases show `S` in the progress output and `SKIP` in the test matrix. They do not count as failures.
 
+## Parallel Execution
+
+By default, cases run sequentially. Use `--parallel` to run multiple cases concurrently using [spatie/fork](https://github.com/spatie/fork) (requires the `pcntl` extension):
+
+```bash
+# Run 4 cases in parallel
+php artisan agent-evaluation --parallel=4
+```
+
+Each case runs in its own forked process with a fresh evaluation instance — no shared state. Results are persisted to storage by the parent process after each child completes.
+
+You can set a default in `config/ai-agent-evaluation.php`:
+
+```php
+'parallel' => 4,
+```
+
+The `--parallel` CLI option overrides the config value. Set to `1` for sequential execution.
+
 ## Command Options
 
 ```bash
@@ -297,6 +316,9 @@ php artisan agent-evaluation --filter=SaleCoach
 
 # Filter by variant label
 php artisan agent-evaluation --variant=openai
+
+# Run cases in parallel (requires pcntl)
+php artisan agent-evaluation --parallel=4
 
 # Output raw JSON to stdout
 php artisan agent-evaluation --json
