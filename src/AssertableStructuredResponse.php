@@ -17,18 +17,19 @@ class AssertableStructuredResponse extends AssertableResponse
         $this->structuredResponse = $response;
     }
 
-    public function assertStructure(array $structure, string $message = '', float $weight = 1.0): self
+    public function assertStructure(array $structure, string $message = '', float $weight = 1.0, ?string $metric = null): self
     {
         $this->runAssertion(
             'assertStructure',
             fn () => $this->assertArrayStructure($structure, $this->structuredResponse->structured),
             $weight,
+            $metric,
         );
 
         return $this;
     }
 
-    public function assertPath(string $path, mixed $expected, string $message = '', float $weight = 1.0): self
+    public function assertPath(string $path, mixed $expected, string $message = '', float $weight = 1.0, ?string $metric = null): self
     {
         $this->runAssertion('assertPath', function () use ($path, $expected, $message) {
             $actual = Arr::get($this->structuredResponse->structured, $path);
@@ -38,12 +39,12 @@ class AssertableStructuredResponse extends AssertableResponse
                 $actual,
                 $message ?: "Expected path [{$path}] to be ".var_export($expected, true).'.',
             );
-        }, $weight);
+        }, $weight, $metric);
 
         return $this;
     }
 
-    public function assertPathContains(string $path, string $needle, string $message = '', float $weight = 1.0): self
+    public function assertPathContains(string $path, string $needle, string $message = '', float $weight = 1.0, ?string $metric = null): self
     {
         $this->runAssertion('assertPathContains', function () use ($path, $needle, $message) {
             $actual = Arr::get($this->structuredResponse->structured, $path);
@@ -54,45 +55,43 @@ class AssertableStructuredResponse extends AssertableResponse
                 $actual,
                 $message ?: "Expected path [{$path}] to contain [{$needle}].",
             );
-        }, $weight);
+        }, $weight, $metric);
 
         return $this;
     }
 
-    public function assertHasKey(string $key, string $message = '', float $weight = 1.0): self
+    public function assertHasKey(string $key, string $message = '', float $weight = 1.0, ?string $metric = null): self
     {
-        $this->runAssertion('assertHasKey', fn () => Assert::assertArrayHasKey(
-            $key,
-            $this->structuredResponse->structured,
+        $this->runAssertion('assertHasKey', fn () => Assert::assertTrue(
+            Arr::has($this->structuredResponse->structured, $key),
             $message ?: "Expected structured response to have key [{$key}].",
-        ), $weight);
+        ), $weight, $metric);
 
         return $this;
     }
 
-    public function assertMissingKey(string $key, string $message = '', float $weight = 1.0): self
+    public function assertMissingKey(string $key, string $message = '', float $weight = 1.0, ?string $metric = null): self
     {
-        $this->runAssertion('assertMissingKey', fn () => Assert::assertArrayNotHasKey(
-            $key,
-            $this->structuredResponse->structured,
+        $this->runAssertion('assertMissingKey', fn () => Assert::assertFalse(
+            Arr::has($this->structuredResponse->structured, $key),
             $message ?: "Expected structured response to not have key [{$key}].",
-        ), $weight);
+        ), $weight, $metric);
 
         return $this;
     }
 
-    public function assertCount(int $count, string $message = '', float $weight = 1.0): self
+    public function assertCount(int $count, string $message = '', float $weight = 1.0, ?string $metric = null): self
     {
         $this->runAssertion('assertCount', fn () => Assert::assertCount(
             $count,
             $this->structuredResponse->structured,
             $message ?: "Expected structured response to have {$count} entries.",
-        ), $weight);
+        ), $weight, $metric);
 
         return $this;
     }
 
-    public function assertWhere(string $path, callable $callback, string $message = '', float $weight = 1.0): self
+    public function assertWhere(string $path, callable $callback, string $message = '', float $weight = 1.0, ?string $metric = null): self
     {
         $this->runAssertion('assertWhere', function () use ($path, $callback, $message) {
             $actual = Arr::get($this->structuredResponse->structured, $path);
@@ -101,7 +100,7 @@ class AssertableStructuredResponse extends AssertableResponse
                 $callback($actual),
                 $message ?: "The value at path [{$path}] did not satisfy the callback.",
             );
-        }, $weight);
+        }, $weight, $metric);
 
         return $this;
     }

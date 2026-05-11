@@ -26,7 +26,7 @@ class RunAgentEvaluationCommand extends Command
     public function handle(StorageInterface $storage): int
     {
         $path = config('ai-agent-evaluation.path', base_path('agent-evaluations'));
-        $concurrency = (int) $this->option('concurrency') ?: (int) config('ai-agent-evaluation.parallel', 1);
+        $concurrency = (int) $this->option('parallel') ?: (int) config('ai-agent-evaluation.parallel', 1);
 
         $runner = new EvaluationRunner($path);
 
@@ -208,7 +208,7 @@ class RunAgentEvaluationCommand extends Command
         return [new Collection($storage->getResults($latestRunId)), $latestRunId];
     }
 
-    private function renderFailures($suites): void
+    private function renderFailures(Collection $suites): void
     {
         $failures = $suites->flatMap(fn ($s) => $s->results->filter(
             fn (EvaluationResult $r) => $r->failed() || $r->errored(),

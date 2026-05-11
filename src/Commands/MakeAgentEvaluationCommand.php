@@ -14,6 +14,13 @@ class MakeAgentEvaluationCommand extends Command
     public function handle(Filesystem $files): int
     {
         $name = $this->argument('name');
+
+        if (preg_match('/[^A-Za-z0-9_\/]/', $name) || str_contains($name, '..')) {
+            $this->components->error('The name may only contain letters, numbers, underscores, and forward slashes.');
+
+            return self::FAILURE;
+        }
+
         $basePath = config('ai-agent-evaluation.path', base_path('agent-evaluations'));
 
         $evaluationFile = $basePath.'/'.$name.'Evaluation.php';

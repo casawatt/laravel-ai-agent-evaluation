@@ -9,5 +9,6 @@ class AssertionResult
         public readonly bool $passed,
         public readonly float $weight,
         public readonly ?string $message = null,
+        public readonly ?string $metric = null,
     ) {}
 }

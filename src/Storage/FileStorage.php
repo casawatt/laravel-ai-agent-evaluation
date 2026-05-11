@@ -115,11 +115,11 @@ class FileStorage extends AbstractStorage
 
     private function deleteDirectory(string $dir): void
     {
-        $files = glob($dir.'/*');
+        $entries = glob($dir.'/*');
 
-        if ($files !== false) {
-            foreach ($files as $file) {
-                unlink($file);
+        if ($entries !== false) {
+            foreach ($entries as $entry) {
+                is_dir($entry) ? $this->deleteDirectory($entry) : unlink($entry);
             }
         }
 

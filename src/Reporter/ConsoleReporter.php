@@ -25,6 +25,11 @@ class ConsoleReporter
             $this->output->writeln('');
             $this->renderProviderSummary($suite);
             $this->output->writeln('');
+
+            if ($suite->hasMetrics()) {
+                $this->renderMetricsSummary($suite);
+                $this->output->writeln('');
+            }
         }
     }
 
@@ -101,6 +106,7 @@ class ConsoleReporter
     private function renderProviderSummary(EvaluationSuite $suite): void
     {
         $hasWeights = $suite->hasWeightedAssertions();
+        $hasPricing = $suite->hasPricing();
 
         $table = new Table($this->output);
 
@@ -109,6 +115,9 @@ class ConsoleReporter
             $headers[] = 'Score';
         }
         $headers = [...$headers, 'Avg Latency', 'Tokens In', 'Tokens Out'];
+        if ($hasPricing) {
+            $headers[] = 'Cost';
+        }
         $table->setHeaders($headers);
 
         $summaries = $suite->providerSummaries();
@@ -120,7 +129,7 @@ class ConsoleReporter
         $totalCompletionTokens = 0;
         $totalWeightSum = 0;
         $totalPassedWeightSum = 0;
-        $providerCount = 0;
+        $totalCost = 0;
 
         foreach ($summaries as $label => $summary) {
             $passRate = number_format($summary['pass_rate'] * 100, 1);
@@ -140,22 +149,29 @@ class ConsoleReporter
             }
 
             $row = [...$row, $latency, number_format($summary['total_prompt_tokens']), number_format($summary['total_completion_tokens'])];
+
+            if ($hasPricing) {
+                $row[] = $summary['total_cost'] !== null
+                    ? $this->formatCost($summary['total_cost'])
+                    : '-';
+                $totalCost += $summary['total_cost'] ?? 0;
+            }
+
             $table->addRow($row);
 
             $totalPassed += $summary['passed'];
             $totalTests += $summary['total'];
-            $totalLatency += $summary['avg_latency'];
+            $totalLatency += $summary['total_latency'];
             $totalPromptTokens += $summary['total_prompt_tokens'];
             $totalCompletionTokens += $summary['total_completion_tokens'];
             $totalWeightSum += $summary['total_weight'];
             $totalPassedWeightSum += $summary['passed_weight'];
-            $providerCount++;
         }
 
         $table->addRow(new TableSeparator);
 
         $overallPassRate = $totalTests > 0 ? number_format(($totalPassed / $totalTests) * 100, 1) : '0.0';
-        $avgLatency = $providerCount > 0 ? $this->formatLatency($totalLatency / $providerCount) : '-';
+        $avgLatency = $totalTests > 0 ? $this->formatLatency($totalLatency / $totalTests) : '-';
 
         $summaryRow = [
             '<options=bold>Summary</>',
@@ -176,8 +192,64 @@ class ConsoleReporter
             '<options=bold>'.number_format($totalCompletionTokens).'</>',
         ];
 
+        if ($hasPricing) {
+            $summaryRow[] = '<options=bold>'.$this->formatCost($totalCost).'</>';
+        }
+
         $table->addRow($summaryRow);
         $table->render();
+    }
+
+    private function renderMetricsSummary(EvaluationSuite $suite): void
+    {
+        $metricSummaries = $suite->metricSummaries();
+
+        $providers = $suite->results
+            ->reject(fn (EvaluationResult $r) => $r->skipped())
+            ->map(fn (EvaluationResult $r) => $r->variantLabel())
+            ->unique()
+            ->values();
+
+        $table = new Table($this->output);
+
+        $headers = ['Metric'];
+        foreach ($providers as $provider) {
+            $headers[] = $this->shortenProviderLabel($provider);
+        }
+        $table->setHeaders($headers);
+
+        foreach ($metricSummaries as $metric => $variantScores) {
+            $row = [$metric];
+
+            foreach ($providers as $provider) {
+                $data = $variantScores->get($provider);
+
+                if ($data === null) {
+                    $row[] = '-';
+
+                    continue;
+                }
+
+                $score = $data['score'] !== null
+                    ? number_format($data['score'] * 100, 1).'%'
+                    : '-';
+
+                $row[] = "{$data['passed_weight']} / {$data['total_weight']} ({$score})";
+            }
+
+            $table->addRow($row);
+        }
+
+        $table->render();
+    }
+
+    private function formatCost(float $cost): string
+    {
+        if ($cost < 0.01) {
+            return '$'.number_format($cost, 4);
+        }
+
+        return '$'.number_format($cost, 2);
     }
 
     private function formatLatency(float $seconds): string

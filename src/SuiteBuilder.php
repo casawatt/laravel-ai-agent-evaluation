@@ -40,6 +40,10 @@ class SuiteBuilder
             $variant->instruction($data['instruction']);
         }
 
+        if (isset($data['input_cost_per_million'], $data['output_cost_per_million'])) {
+            $variant->pricing($data['input_cost_per_million'], $data['output_cost_per_million']);
+        }
+
         $assertionResults = null;
 
         if (isset($data['score']['assertions']) && is_array($data['score']['assertions'])) {
@@ -49,6 +53,7 @@ class SuiteBuilder
                     passed: $a['passed'] ?? true,
                     weight: $a['weight'] ?? 1.0,
                     message: $a['message'] ?? null,
+                    metric: $a['metric'] ?? null,
                 ),
             );
         }

@@ -22,6 +22,7 @@ class EvaluationResult
         /** @var Collection<int, AssertionResult>|null */
         public readonly ?Collection $assertionResults = null,
         public readonly bool $reused = false,
+        public readonly ?string $agentClass = null,
     ) {}
 
     public function resultKey(): string
@@ -69,22 +70,36 @@ class EvaluationResult
         return $this->totalWeight() > 0;
     }
 
+    public function cost(): ?float
+    {
+        if ($this->usage === null || ! $this->variant->hasPricing()) {
+            return null;
+        }
+
+        return ($this->usage->promptTokens * $this->variant->price->inputPerMillion
+            + $this->usage->completionTokens * $this->variant->price->outputPerMillion) / 1_000_000;
+    }
+
     public function toStorageArray(): array
     {
         return [
             'evaluation' => $this->evaluationName,
+            'agent' => $this->agentClass,
             'case' => $this->caseName,
             'description' => $this->caseDescription,
             'variant' => $this->variantLabel(),
             'provider' => $this->variant->providerValue(),
             'model' => $this->variant->model,
             'instruction' => $this->variant->instruction,
+            'input_cost_per_million' => $this->variant->price?->inputPerMillion,
+            'output_cost_per_million' => $this->variant->price?->outputPerMillion,
             'status' => $this->status->value,
             'failure_message' => $this->failureMessage,
             'skip_reason' => $this->skipReason,
             'latency_seconds' => $this->latencySeconds,
             'usage' => $this->usage?->toArray(),
             'response_text' => $this->responseText,
+            'cost' => $this->cost(),
             'score' => $this->hasWeightedAssertions() ? [
                 'passed_weight' => $this->passedWeight(),
                 'total_weight' => $this->totalWeight(),
@@ -92,6 +107,7 @@ class EvaluationResult
                     'assertion' => $a->assertion,
                     'passed' => $a->passed,
                     'weight' => $a->weight,
+                    'metric' => $a->metric,
                     'message' => $a->message,
                 ])->all(),
             ] : null,
@@ -117,6 +133,7 @@ class EvaluationResult
             responseText: $this->responseText,
             assertionResults: $this->assertionResults,
             reused: $this->reused,
+            agentClass: $this->agentClass,
         );
     }
 }
