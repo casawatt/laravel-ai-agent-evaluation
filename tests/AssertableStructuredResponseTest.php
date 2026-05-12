@@ -18,17 +18,19 @@ function makeStructuredResponse(array $structured, ?Usage $usage = null): Assert
 // --- assertStructure ---
 
 it('passes assertStructure with flat keys', function () {
-    makeStructuredResponse(['name' => 'John', 'age' => 30])
+    $r = makeStructuredResponse(['name' => 'John', 'age' => 30])
         ->assertStructure(['name', 'age']);
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('passes assertStructure with nested keys', function () {
-    makeStructuredResponse(['user' => ['name' => 'John', 'email' => 'john@example.com']])
+    $r = makeStructuredResponse(['user' => ['name' => 'John', 'email' => 'john@example.com']])
         ->assertStructure(['user' => ['name', 'email']]);
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('passes assertStructure with wildcard', function () {
-    makeStructuredResponse([
+    $r = makeStructuredResponse([
         'items' => [
             ['id' => 1, 'name' => 'A'],
             ['id' => 2, 'name' => 'B'],
@@ -36,6 +38,7 @@ it('passes assertStructure with wildcard', function () {
     ])->assertStructure([
         'items' => ['*' => ['id', 'name']],
     ]);
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('records failure for assertStructure when key is missing', function () {
@@ -44,48 +47,138 @@ it('records failure for assertStructure when key is missing', function () {
     expect($r->getAssertionResults()->first()->passed)->toBeFalse();
 });
 
-// --- assertPath ---
+// --- assertEquals (path-based) ---
 
-it('passes assertPath with dot notation', function () {
-    makeStructuredResponse(['user' => ['name' => 'John']])
-        ->assertPath('user.name', 'John');
+it('passes assertEquals with dot notation', function () {
+    $r = makeStructuredResponse(['user' => ['name' => 'John']])
+        ->assertEquals('user.name', 'John');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
-it('passes assertPath for top-level key', function () {
-    makeStructuredResponse(['status' => 'active'])
-        ->assertPath('status', 'active');
-});
-
-it('records failure for assertPath when value differs', function () {
+it('passes assertEquals for top-level key', function () {
     $r = makeStructuredResponse(['status' => 'active'])
-        ->assertPath('status', 'inactive');
+        ->assertEquals('status', 'active');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
+});
+
+it('records failure for assertEquals when value differs', function () {
+    $r = makeStructuredResponse(['status' => 'active'])
+        ->assertEquals('status', 'inactive');
     expect($r->getAssertionResults()->first()->passed)->toBeFalse();
 });
 
-// --- assertPathContains ---
-
-it('passes assertPathContains', function () {
-    makeStructuredResponse(['bio' => 'Senior PHP developer'])
-        ->assertPathContains('bio', 'PHP');
-});
-
-it('records failure for assertPathContains when not found', function () {
-    $r = makeStructuredResponse(['bio' => 'Senior PHP developer'])
-        ->assertPathContains('bio', 'Python');
-    expect($r->getAssertionResults()->first()->passed)->toBeFalse();
-});
-
-it('records failure for assertPathContains when value is not a string', function () {
+it('supports non-string expected values in assertEquals', function () {
     $r = makeStructuredResponse(['count' => 42])
-        ->assertPathContains('count', '42');
+        ->assertEquals('count', 42);
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
+});
+
+// --- assertContains / assertNotContains / assertContainsIgnoringCase (path-based) ---
+
+it('passes assertContains at path', function () {
+    $r = makeStructuredResponse(['bio' => 'Senior PHP developer'])
+        ->assertContains('bio', 'PHP');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
+});
+
+it('records failure for assertContains when needle missing', function () {
+    $r = makeStructuredResponse(['bio' => 'Senior PHP developer'])
+        ->assertContains('bio', 'Python');
     expect($r->getAssertionResults()->first()->passed)->toBeFalse();
+});
+
+it('records failure for assertContains when value at path is not a string', function () {
+    $r = makeStructuredResponse(['count' => 42])
+        ->assertContains('count', '42');
+    expect($r->getAssertionResults()->first()->passed)->toBeFalse();
+});
+
+it('passes assertNotContains at path', function () {
+    $r = makeStructuredResponse(['bio' => 'Senior PHP developer'])
+        ->assertNotContains('bio', 'Python');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
+});
+
+it('passes assertContainsIgnoringCase at path', function () {
+    $r = makeStructuredResponse(['bio' => 'Senior PHP developer'])
+        ->assertContainsIgnoringCase('bio', 'php');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
+});
+
+// --- assertRegex / assertNotRegex (path-based) ---
+
+it('passes assertRegex at path', function () {
+    $r = makeStructuredResponse(['code' => 'PRM12345'])
+        ->assertRegex('code', '/^PRM\d+$/');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
+});
+
+it('records failure for assertRegex when no match', function () {
+    $r = makeStructuredResponse(['code' => 'ABC'])
+        ->assertRegex('code', '/^PRM\d+$/');
+    expect($r->getAssertionResults()->first()->passed)->toBeFalse();
+});
+
+it('passes assertNotRegex at path', function () {
+    $r = makeStructuredResponse(['code' => 'ABC'])
+        ->assertNotRegex('code', '/^PRM\d+$/');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
+});
+
+// --- assertStartsWith / assertEndsWith (path-based) ---
+
+it('passes assertStartsWith at path', function () {
+    $r = makeStructuredResponse(['url' => 'https://example.com/page'])
+        ->assertStartsWith('url', 'https://');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
+});
+
+it('passes assertEndsWith at path', function () {
+    $r = makeStructuredResponse(['url' => 'https://example.com/page'])
+        ->assertEndsWith('url', '/page');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
+});
+
+// --- assertEmpty / assertNotEmpty (path-based) ---
+
+it('passes assertEmpty at path', function () {
+    $r = makeStructuredResponse(['notes' => ''])
+        ->assertEmpty('notes');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
+});
+
+it('passes assertNotEmpty at path', function () {
+    $r = makeStructuredResponse(['name' => 'John'])
+        ->assertNotEmpty('name');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
+});
+
+it('records failure for assertNotEmpty when value at path is empty', function () {
+    $r = makeStructuredResponse(['notes' => ''])
+        ->assertNotEmpty('notes');
+    expect($r->getAssertionResults()->first()->passed)->toBeFalse();
+});
+
+// --- assertMinLength / assertMaxLength (path-based) ---
+
+it('passes assertMinLength at path', function () {
+    $r = makeStructuredResponse(['name' => 'Hello World'])
+        ->assertMinLength('name', 5);
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
+});
+
+it('passes assertMaxLength at path', function () {
+    $r = makeStructuredResponse(['name' => 'Hi'])
+        ->assertMaxLength('name', 5);
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 // --- assertHasKey / assertMissingKey ---
 
 it('passes assertHasKey', function () {
-    makeStructuredResponse(['name' => 'John'])
+    $r = makeStructuredResponse(['name' => 'John'])
         ->assertHasKey('name');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('records failure for assertHasKey when missing', function () {
@@ -95,8 +188,9 @@ it('records failure for assertHasKey when missing', function () {
 });
 
 it('passes assertMissingKey', function () {
-    makeStructuredResponse(['name' => 'John'])
+    $r = makeStructuredResponse(['name' => 'John'])
         ->assertMissingKey('age');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('records failure for assertMissingKey when present', function () {
@@ -106,8 +200,9 @@ it('records failure for assertMissingKey when present', function () {
 });
 
 it('passes assertHasKey with dot-notation', function () {
-    makeStructuredResponse(['user' => ['address' => ['city' => 'Paris']]])
+    $r = makeStructuredResponse(['user' => ['address' => ['city' => 'Paris']]])
         ->assertHasKey('user.address.city');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('records failure for assertHasKey with dot-notation when missing', function () {
@@ -117,8 +212,9 @@ it('records failure for assertHasKey with dot-notation when missing', function (
 });
 
 it('passes assertMissingKey with dot-notation', function () {
-    makeStructuredResponse(['user' => ['address' => ['city' => 'Paris']]])
+    $r = makeStructuredResponse(['user' => ['address' => ['city' => 'Paris']]])
         ->assertMissingKey('user.address.zip');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('records failure for assertMissingKey with dot-notation when present', function () {
@@ -130,8 +226,9 @@ it('records failure for assertMissingKey with dot-notation when present', functi
 // --- assertCount ---
 
 it('passes assertCount', function () {
-    makeStructuredResponse(['a' => 1, 'b' => 2, 'c' => 3])
+    $r = makeStructuredResponse(['a' => 1, 'b' => 2, 'c' => 3])
         ->assertCount(3);
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('records failure for assertCount when wrong', function () {
@@ -143,8 +240,9 @@ it('records failure for assertCount when wrong', function () {
 // --- assertWhere ---
 
 it('passes assertWhere with callback', function () {
-    makeStructuredResponse(['score' => 85])
+    $r = makeStructuredResponse(['score' => 85])
         ->assertWhere('score', fn ($value) => $value >= 80);
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('records failure for assertWhere when callback returns false', function () {
@@ -156,26 +254,28 @@ it('records failure for assertWhere when callback returns false', function () {
 // --- Chaining ---
 
 it('supports chaining structured assertions', function () {
-    makeStructuredResponse([
+    $r = makeStructuredResponse([
         'name' => 'John',
         'age' => 30,
         'bio' => 'A developer',
     ])
         ->assertStructure(['name', 'age', 'bio'])
-        ->assertPath('name', 'John')
-        ->assertPathContains('bio', 'developer')
+        ->assertEquals('name', 'John')
+        ->assertContains('bio', 'developer')
         ->assertHasKey('age')
         ->assertMissingKey('email')
         ->assertCount(3)
         ->assertWhere('age', fn ($v) => $v > 18);
+    expect($r->getAssertionResults()->every(fn ($x) => $x->passed))->toBeTrue();
 });
 
-// --- Inherits parent assertions ---
+// --- Inherited response-level assertions ---
 
-it('can use text assertions from parent', function () {
-    makeStructuredResponse(['name' => 'John'])
-        ->assertNotEmpty()
-        ->assertLatencyBelow(1.0);
+it('can use response-level assertions inherited from base', function () {
+    $r = makeStructuredResponse(['name' => 'John'])
+        ->assertLatencyBelow(1.0)
+        ->assertTokensBelow(1000);
+    expect($r->getAssertionResults()->every(fn ($x) => $x->passed))->toBeTrue();
 });
 
 // --- Weighted Assertions ---
@@ -183,8 +283,8 @@ it('can use text assertions from parent', function () {
 it('supports weighted structured assertions', function () {
     $response = makeStructuredResponse(['name' => 'John', 'age' => 30]);
     $response
-        ->assertPath('name', 'John', weight: 0.8)
-        ->assertPath('age', 99, weight: 0.2)
+        ->assertEquals('name', 'John', weight: 0.8)
+        ->assertEquals('age', 99, weight: 0.2)
         ->assertHasKey('name', weight: 0.5);
 
     $results = $response->getAssertionResults();

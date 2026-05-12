@@ -189,30 +189,47 @@ All assertions are chainable. The package returns an `AssertableResponse` for te
 
 ### Text (AssertableResponse)
 
-| Method | Description |
-|---|---|
-| `assertContains(string $needle)` | Response contains the string |
-| `assertNotContains(string $needle)` | Response does not contain the string |
+| Method                                       | Description |
+|----------------------------------------------|---|
+| `assertContains(string $needle)`             | Response contains the string |
+| `assertNotContains(string $needle)`          | Response does not contain the string |
 | `assertContainsIgnoringCase(string $needle)` | Case-insensitive contains |
-| `assertRegex(string $pattern)` | Response matches the regex |
-| `assertNotRegex(string $pattern)` | Response does not match the regex |
-| `assertStartsWith(string $prefix)` | Response starts with the string |
-| `assertEndsWith(string $suffix)` | Response ends with the string |
-| `assertExactly(string $expected)` | Response equals the string exactly |
-| `assertEmpty()` | Response is empty |
-| `assertNotEmpty()` | Response is not empty |
-| `assertMinLength(int $min)` | Response has at least `$min` characters |
-| `assertMaxLength(int $max)` | Response has at most `$max` characters |
+| `assertRegex(string $pattern)`               | Response matches the regex |
+| `assertNotRegex(string $pattern)`            | Response does not match the regex |
+| `assertStartsWith(string $prefix)`           | Response starts with the string |
+| `assertEndsWith(string $suffix)`             | Response ends with the string |
+| `assertEquals(string $expected)`             | Response equals the string exactly |
+| `assertEmpty()`                              | Response is empty |
+| `assertNotEmpty()`                           | Response is not empty |
+| `assertMinLength(int $min)`                  | Response has at least `$min` characters |
+| `assertMaxLength(int $max)`                  | Response has at most `$max` characters |
 
 ### Structured Data (AssertableStructuredResponse)
 
 Available automatically when your agent implements `HasStructuredOutput`. These work directly on the parsed `$response->structured` array — no JSON parsing needed.
 
+All text assertions are also available, with a `string $path` (dot-notation) as the first argument — the assertion runs against the value at that path:
+
+| Method | Description |
+|---|---|
+| `assertContains(string $path, string $needle)` | String value at path contains the needle |
+| `assertNotContains(string $path, string $needle)` | String value at path does not contain the needle |
+| `assertContainsIgnoringCase(string $path, string $needle)` | Case-insensitive contains |
+| `assertRegex(string $path, string $pattern)` | String value at path matches the regex |
+| `assertNotRegex(string $path, string $pattern)` | String value at path does not match the regex |
+| `assertStartsWith(string $path, string $prefix)` | String value at path starts with prefix |
+| `assertEndsWith(string $path, string $suffix)` | String value at path ends with suffix |
+| `assertEquals(string $path, mixed $expected)` | Value at path strictly equals expected |
+| `assertEmpty(string $path)` | Value at path is empty |
+| `assertNotEmpty(string $path)` | Value at path is not empty |
+| `assertMinLength(string $path, int $min)` | String value at path has at least `$min` characters |
+| `assertMaxLength(string $path, int $max)` | String value at path has at most `$max` characters |
+
+Plus structure-specific assertions:
+
 | Method | Description |
 |---|---|
 | `assertStructure(array $structure)` | Validates nested key structure (supports `*` wildcards) |
-| `assertPath(string $path, mixed $expected)` | Value at dot-notation path equals expected |
-| `assertPathContains(string $path, string $needle)` | String value at path contains the needle |
 | `assertHasKey(string $key)` | Key exists (supports dot-notation) |
 | `assertMissingKey(string $key)` | Key does not exist (supports dot-notation) |
 | `assertCount(int $count)` | Top-level array has N entries |
@@ -221,8 +238,9 @@ Available automatically when your agent implements `HasStructuredOutput`. These 
 ```php
 $this->agent(prompt: 'Describe the product')
     ->assertStructure(['name', 'price', 'tags' => ['*' => ['label']]])
-    ->assertPath('name', 'Widget')
-    ->assertPathContains('name', 'Wid')
+    ->assertEquals('name', 'Widget')
+    ->assertContains('name', 'Wid')
+    ->assertRegex('sku', '/^SKU-\d+$/')
     ->assertHasKey('price')
     ->assertMissingKey('deleted_at')
     ->assertCount(3)

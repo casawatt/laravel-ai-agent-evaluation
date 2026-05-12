@@ -65,34 +65,40 @@ it('passes assertNotRegex', function () {
 });
 
 it('passes assertStartsWith', function () {
-    makeResponse('Hello World')->assertStartsWith('Hello');
+    $r = makeResponse('Hello World')->assertStartsWith('Hello');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('passes assertEndsWith', function () {
-    makeResponse('Hello World')->assertEndsWith('World');
+    $r = makeResponse('Hello World')->assertEndsWith('World');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
-it('passes assertExactly', function () {
-    makeResponse('Hello')->assertExactly('Hello');
+it('passes assertEquals', function () {
+    $r = makeResponse('Hello')->assertEquals('Hello');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
-it('records failure for assertExactly when text differs', function () {
-    $r = makeResponse('Hello')->assertExactly('Goodbye');
+it('records failure for assertEquals when text differs', function () {
+    $r = makeResponse('Hello')->assertEquals('Goodbye');
     expect($r->getAssertionResults()->first()->passed)->toBeFalse();
 });
 
 it('passes assertEmpty', function () {
-    makeResponse('')->assertEmpty();
+    $r = makeResponse('')->assertEmpty();
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('passes assertNotEmpty', function () {
-    makeResponse('Hello')->assertNotEmpty();
+    $r = makeResponse('Hello')->assertNotEmpty();
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 // --- Length Assertions ---
 
 it('passes assertMinLength', function () {
-    makeResponse('Hello World')->assertMinLength(5);
+    $r = makeResponse('Hello World')->assertMinLength(5);
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('records failure for assertMinLength when too short', function () {
@@ -101,7 +107,8 @@ it('records failure for assertMinLength when too short', function () {
 });
 
 it('passes assertMaxLength', function () {
-    makeResponse('Hi')->assertMaxLength(5);
+    $r = makeResponse('Hi')->assertMaxLength(5);
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('records failure for assertMaxLength when too long', function () {
@@ -113,7 +120,8 @@ it('records failure for assertMaxLength when too long', function () {
 
 it('passes assertToolCalled when tool was called', function () {
     $toolCall = new ToolCall(id: '1', name: 'search', arguments: ['query' => 'test']);
-    makeResponse('result', toolCalls: [$toolCall])->assertToolCalled('search');
+    $r = makeResponse('result', toolCalls: [$toolCall])->assertToolCalled('search');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('records failure for assertToolCalled when tool was not called', function () {
@@ -122,7 +130,8 @@ it('records failure for assertToolCalled when tool was not called', function () 
 });
 
 it('passes assertToolNotCalled', function () {
-    makeResponse('result')->assertToolNotCalled('search');
+    $r = makeResponse('result')->assertToolNotCalled('search');
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('passes assertToolCalledTimes', function () {
@@ -130,13 +139,15 @@ it('passes assertToolCalledTimes', function () {
         new ToolCall(id: '1', name: 'search', arguments: []),
         new ToolCall(id: '2', name: 'search', arguments: []),
     ];
-    makeResponse('result', toolCalls: $toolCalls)->assertToolCalledTimes('search', 2);
+    $r = makeResponse('result', toolCalls: $toolCalls)->assertToolCalledTimes('search', 2);
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 // --- Performance Assertions ---
 
 it('passes assertLatencyBelow', function () {
-    makeResponse('Hello')->assertLatencyBelow(1.0);
+    $r = makeResponse('Hello')->assertLatencyBelow(1.0);
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('records failure for assertLatencyBelow when too slow', function () {
@@ -145,8 +156,9 @@ it('records failure for assertLatencyBelow when too slow', function () {
 });
 
 it('passes assertTokensBelow', function () {
-    makeResponse('Hello', new Usage(promptTokens: 50, completionTokens: 30))
+    $r = makeResponse('Hello', new Usage(promptTokens: 50, completionTokens: 30))
         ->assertTokensBelow(100);
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('records failure for assertTokensBelow when too many tokens', function () {
@@ -158,7 +170,8 @@ it('records failure for assertTokensBelow when too many tokens', function () {
 // --- Custom Assertion ---
 
 it('passes custom assert', function () {
-    makeResponse('Hello World')->assert(fn ($response) => str_contains($response->text, 'World'));
+    $r = makeResponse('Hello World')->assert(fn ($response) => str_contains($response->text, 'World'));
+    expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('records failure for custom assert', function () {
@@ -169,12 +182,13 @@ it('records failure for custom assert', function () {
 // --- Chaining ---
 
 it('supports chaining multiple assertions', function () {
-    makeResponse('Hello World 123')
+    $r = makeResponse('Hello World 123')
         ->assertNotEmpty()
         ->assertContains('Hello')
         ->assertRegex('/\d+/')
         ->assertMinLength(5)
         ->assertLatencyBelow(1.0);
+    expect($r->getAssertionResults()->every(fn ($x) => $x->passed))->toBeTrue();
 });
 
 // --- Weighted Assertions ---

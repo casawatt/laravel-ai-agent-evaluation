@@ -16,7 +16,7 @@ abstract class Evaluation
 
     private ?Variant $currentVariant = null;
 
-    /** @var Collection<int, AssertableResponse> */
+    /** @var Collection<int, AbstractAssertableResponse> */
     private Collection $responses;
 
     public function __construct()

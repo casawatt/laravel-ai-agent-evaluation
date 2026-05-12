@@ -4,11 +4,11 @@ namespace Casawatt\LaravelAiAgentEvaluation;
 
 use Casawatt\LaravelAiAgentEvaluation\Attributes\EvaluationCase;
 use Casawatt\LaravelAiAgentEvaluation\Attributes\With;
+use Casawatt\LaravelAiAgentEvaluation\Exceptions\AssertionFailureException;
 use Casawatt\LaravelAiAgentEvaluation\Storage\StorageInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Laravel\Ai\Responses\Data\Usage;
-use PHPUnit\Framework\AssertionFailedError;
 use ReflectionClass;
 use ReflectionMethod;
 use Symfony\Component\Finder\Finder;
@@ -395,7 +395,7 @@ class EvaluationRunner
                 skipReason: $e->getMessage(),
                 agentClass: $agentClass,
             );
-        } catch (AssertionFailedError $e) {
+        } catch (AssertionFailureException $e) {
             $responses = $evaluation->getResponses();
             $latency = $responses->sum('latencySeconds');
             $usage = $this->aggregateUsage($responses);
@@ -435,7 +435,7 @@ class EvaluationRunner
     private function aggregateUsage(Collection $responses): Usage
     {
         return $responses->reduce(
-            fn (Usage $carry, AssertableResponse $r) => $carry->add($r->response->usage),
+            fn (Usage $carry, AbstractAssertableResponse $r) => $carry->add($r->response->usage),
             new Usage,
         );
     }
@@ -446,7 +446,7 @@ class EvaluationRunner
     private function collectAssertionResults(Collection $responses): Collection
     {
         return $responses->flatMap(
-            fn (AssertableResponse $r) => $r->getAssertionResults(),
+            fn (AbstractAssertableResponse $r) => $r->getAssertionResults(),
         );
     }
 
