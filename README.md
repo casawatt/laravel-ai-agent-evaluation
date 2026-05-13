@@ -11,7 +11,7 @@ composer require --dev casawatt/laravel-ai-agent-evaluation
 Publish the config file:
 
 ```bash
-php artisan vendor:publish --tag="laravel-ai-agent-evaluation-config"
+php artisan vendor:publish --tag="ai-agent-evaluation-config"
 ```
 
 ## Quick Start
