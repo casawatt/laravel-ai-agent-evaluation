@@ -137,6 +137,31 @@ it('returns null cost when variant has no pricing', function () {
     expect($result->cost())->toBeNull();
 });
 
+it('exposes generation options through the suite and summaries', function () {
+    $suite = new EvaluationSuite('TestEvaluation', 'App\\Agent');
+
+    $variant = (new Variant(Lab::OpenAI, 'gpt-4o-mini'))->temperature(0.2)->maxTokens(512);
+
+    $suite->add(new EvaluationResult(
+        evaluationName: 'TestEvaluation',
+        caseName: 'case_one',
+        caseDescription: 'case one',
+        variant: $variant,
+        status: ResultStatus::Passed,
+        latencySeconds: 0.5,
+        usage: new Usage(promptTokens: 100, completionTokens: 50),
+    ));
+
+    expect($suite->hasGenerationOptions())->toBeTrue();
+
+    $summary = $suite->providerSummaries()->get('openai/gpt-4o-mini');
+    expect($summary['variant'])->toBe($variant);
+});
+
+it('reports no generation options when none are set', function () {
+    expect(makeSuiteWithResults()->hasGenerationOptions())->toBeFalse();
+});
+
 it('includes cost in provider summaries', function () {
     $suite = new EvaluationSuite('TestEvaluation', 'App\\Agent');
 

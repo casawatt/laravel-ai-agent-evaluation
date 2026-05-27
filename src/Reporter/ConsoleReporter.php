@@ -4,6 +4,7 @@ namespace Casawatt\LaravelAiAgentEvaluation\Reporter;
 
 use Casawatt\LaravelAiAgentEvaluation\EvaluationResult;
 use Casawatt\LaravelAiAgentEvaluation\EvaluationSuite;
+use Casawatt\LaravelAiAgentEvaluation\Variant;
 use Illuminate\Support\Collection;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableSeparator;
@@ -107,6 +108,7 @@ class ConsoleReporter
     {
         $hasWeights = $suite->hasWeightedAssertions();
         $hasPricing = $suite->hasPricing();
+        $hasParams = $suite->hasGenerationOptions();
 
         $table = new Table($this->output);
 
@@ -117,6 +119,9 @@ class ConsoleReporter
         $headers = [...$headers, 'Avg Latency', 'Tokens In', 'Tokens Out'];
         if ($hasPricing) {
             $headers[] = 'Cost';
+        }
+        if ($hasParams) {
+            $headers[] = 'Params';
         }
         $table->setHeaders($headers);
 
@@ -157,6 +162,13 @@ class ConsoleReporter
                 $totalCost += $summary['total_cost'] ?? 0;
             }
 
+            if ($hasParams) {
+                $params = $summary['variant'] !== null
+                    ? $this->formatGenerationParams($summary['variant'])
+                    : '';
+                $row[] = $params !== '' ? $params : '-';
+            }
+
             $table->addRow($row);
 
             $totalPassed += $summary['passed'];
@@ -194,6 +206,10 @@ class ConsoleReporter
 
         if ($hasPricing) {
             $summaryRow[] = '<options=bold>'.$this->formatCost($totalCost).'</>';
+        }
+
+        if ($hasParams) {
+            $summaryRow[] = '';
         }
 
         $table->addRow($summaryRow);
@@ -259,6 +275,26 @@ class ConsoleReporter
         }
 
         return number_format($seconds, 1).'s';
+    }
+
+    private function formatGenerationParams(Variant $variant): string
+    {
+        $parts = [];
+
+        if ($variant->temperature !== null) {
+            $parts[] = 'temp='.$variant->temperature;
+        }
+        if ($variant->topP !== null) {
+            $parts[] = 'topP='.$variant->topP;
+        }
+        if ($variant->maxTokens !== null) {
+            $parts[] = 'maxTok='.$variant->maxTokens;
+        }
+        if ($variant->maxSteps !== null) {
+            $parts[] = 'maxSteps='.$variant->maxSteps;
+        }
+
+        return implode(' ', $parts);
     }
 
     private function shortenProviderLabel(string $label): string

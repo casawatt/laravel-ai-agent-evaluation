@@ -7,6 +7,7 @@ use Casawatt\LaravelAiAgentEvaluation\Commands\RunAgentEvaluationCommand;
 use Casawatt\LaravelAiAgentEvaluation\Storage\FileStorage;
 use Casawatt\LaravelAiAgentEvaluation\Storage\SqliteStorage;
 use Casawatt\LaravelAiAgentEvaluation\Storage\StorageInterface;
+use Illuminate\Http\Client\RequestException;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -17,6 +18,7 @@ class LaravelAiAgentEvaluationServiceProvider extends PackageServiceProvider
         $package
             ->name('laravel-ai-agent-evaluation')
             ->hasConfigFile()
+            ->hasViews()
             ->hasCommands([
                 MakeAgentEvaluationCommand::class,
                 RunAgentEvaluationCommand::class,
@@ -33,5 +35,20 @@ class LaravelAiAgentEvaluationServiceProvider extends PackageServiceProvider
                 default => new FileStorage($path),
             };
         });
+    }
+
+    public function packageBooted(): void
+    {
+        if ($this->app->environment('local') || config('app.debug')) {
+            $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        }
+
+        $truncateAt = config('ai-agent-evaluation.truncate_errors_at');
+
+        if (! $truncateAt) {
+            RequestException::dontTruncate();
+        } elseif (is_int($truncateAt)) {
+            RequestException::truncateAt($truncateAt);
+        }
     }
 }

@@ -10,9 +10,9 @@ class AssertableStructuredResponse extends AbstractAssertableResponse
 {
     public readonly StructuredAgentResponse $structuredResponse;
 
-    public function __construct(StructuredAgentResponse $response, float $latencySeconds)
+    public function __construct(StructuredAgentResponse $response, float $latencySeconds, ?string $prompt = null)
     {
-        parent::__construct($response, $latencySeconds);
+        parent::__construct($response, $latencySeconds, $prompt);
 
         $this->structuredResponse = $response;
     }

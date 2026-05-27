@@ -127,6 +127,35 @@ Relative paths are resolved from the evaluations directory (`agent-evaluations/`
 
 This lets you compare the **same model with different instructions** — useful for prompt engineering and evaluating system prompt variations.
 
+### Generation Options
+
+Variants can override the model's generation parameters — handy for comparing the **same model at different temperatures** or token budgets:
+
+```php
+public function setUp(): void
+{
+    $this->variant(Lab::OpenAI, 'gpt-4o-mini')
+        ->label('Precise')
+        ->temperature(0.0);
+
+    $this->variant(Lab::OpenAI, 'gpt-4o-mini')
+        ->label('Creative')
+        ->temperature(1.0)
+        ->maxTokens(512);
+}
+```
+
+The four options map directly to the Laravel AI SDK's generation parameters:
+
+| Method | Parameter | Type |
+|--------|-----------|------|
+| `->temperature(float)` | sampling temperature | `float` |
+| `->topP(float)` | nucleus sampling (top-p) | `float` |
+| `->maxTokens(int)` | maximum output tokens | `int` |
+| `->maxSteps(int)` | maximum tool-call steps | `int` |
+
+Any option you leave unset falls back to the value defined on the agent itself (its `temperature()` method or `#[Temperature]` attribute, and so on). When at least one variant sets a generation option, the variant summary table shows a **Params** column (e.g. `temp=0.0 maxTok=512`), and each cell in the HTML report lists the active parameters.
+
 ### Cost Tracking
 
 Add pricing to variants to track cost per evaluation. Pricing is defined in dollars per million tokens:
@@ -443,6 +472,9 @@ php artisan agent-evaluation --resume
 
 # Retry only errors from the latest run (API failures, timeouts)
 php artisan agent-evaluation --retry-errors
+
+# Retry only failed cases from the latest run (assertions that didn't pass)
+php artisan agent-evaluation --retry-failed
 ```
 
 ## Storage
@@ -464,6 +496,8 @@ The package uses raw PDO with WAL mode — no Laravel database connection requir
 **`--resume`** — Loads the latest run from storage and skips all case+variant combos that already have results. Only missing cases are executed. Useful when a run was interrupted.
 
 **`--retry-errors`** — Like resume, but re-executes cases with `error` status (API failures, timeouts). Passed/failed/skipped results are kept as-is.
+
+**`--retry-failed`** — Like resume, but re-executes cases with `failed` status (assertions that didn't pass). Passed/errored/skipped results are kept as-is.
 
 Each result has a `status`: `passed`, `failed`, `skipped`, or `error`. Assertion failures are `failed`; exceptions are `error`.
 

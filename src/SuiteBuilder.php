@@ -40,6 +40,22 @@ class SuiteBuilder
             $variant->instruction($data['instruction']);
         }
 
+        if (isset($data['temperature'])) {
+            $variant->temperature($data['temperature']);
+        }
+
+        if (isset($data['top_p'])) {
+            $variant->topP($data['top_p']);
+        }
+
+        if (isset($data['max_tokens'])) {
+            $variant->maxTokens($data['max_tokens']);
+        }
+
+        if (isset($data['max_steps'])) {
+            $variant->maxSteps($data['max_steps']);
+        }
+
         if (isset($data['input_cost_per_million'], $data['output_cost_per_million'])) {
             $variant->pricing($data['input_cost_per_million'], $data['output_cost_per_million']);
         }

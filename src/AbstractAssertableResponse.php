@@ -14,6 +14,7 @@ abstract class AbstractAssertableResponse
     public function __construct(
         public readonly AgentResponse $response,
         public readonly float $latencySeconds,
+        public readonly ?string $prompt = null,
     ) {
         $this->assertionResults = new Collection;
     }

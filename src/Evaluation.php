@@ -87,8 +87,17 @@ abstract class Evaluation
         $agentClass = $this->resolveAgentClass();
         $agent = app($agentClass);
 
-        if ($this->currentVariant?->instruction !== null) {
-            $agent = new AgentDecorator($agent, $this->currentVariant->instruction);
+        $variant = $this->currentVariant;
+
+        if ($variant !== null && ($variant->instruction !== null || $variant->hasGenerationOptions())) {
+            $agent = new AgentDecorator(
+                $agent,
+                $variant->instruction,
+                $variant->temperature,
+                $variant->topP,
+                $variant->maxTokens,
+                $variant->maxSteps,
+            );
         }
 
         $startTime = microtime(true);
@@ -104,8 +113,8 @@ abstract class Evaluation
         $latency = microtime(true) - $startTime;
 
         $assertable = $response instanceof StructuredAgentResponse
-            ? new AssertableStructuredResponse($response, $latency)
-            : new AssertableResponse($response, $latency);
+            ? new AssertableStructuredResponse($response, $latency, $prompt)
+            : new AssertableResponse($response, $latency, $prompt);
         $this->responses->push($assertable);
 
         return $assertable;

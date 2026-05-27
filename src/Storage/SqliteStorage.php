@@ -72,6 +72,40 @@ class SqliteStorage extends AbstractStorage
         return $row ? $row['id'] : null;
     }
 
+    public function listRuns(): array
+    {
+        $stmt = $this->pdo->query('
+            SELECT
+                r.id,
+                r.created_at,
+                COUNT(res.id) AS result_count,
+                COALESCE(SUM(CASE WHEN res.status = "passed"  THEN 1 ELSE 0 END), 0) AS passed,
+                COALESCE(SUM(CASE WHEN res.status = "failed"  THEN 1 ELSE 0 END), 0) AS failed,
+                COALESCE(SUM(CASE WHEN res.status = "error"   THEN 1 ELSE 0 END), 0) AS errored,
+                COALESCE(SUM(CASE WHEN res.status = "skipped" THEN 1 ELSE 0 END), 0) AS skipped
+            FROM runs r
+            LEFT JOIN results res ON res.run_id = r.id
+            GROUP BY r.id, r.created_at
+            ORDER BY r.created_at DESC
+        ');
+
+        $runs = [];
+
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $runs[] = [
+                'id' => (string) $row['id'],
+                'created_at' => (string) $row['created_at'],
+                'result_count' => (int) $row['result_count'],
+                'passed' => (int) $row['passed'],
+                'failed' => (int) $row['failed'],
+                'errored' => (int) $row['errored'],
+                'skipped' => (int) $row['skipped'],
+            ];
+        }
+
+        return $runs;
+    }
+
     public function getResultsExcludingStatus(string $runId, ResultStatus $excludeStatus): array
     {
         $stmt = $this->pdo->prepare('SELECT result_key, data FROM results WHERE run_id = ? AND status != ?');
@@ -84,6 +118,17 @@ class SqliteStorage extends AbstractStorage
         }
 
         return $results;
+    }
+
+    public function deleteRun(string $runId): void
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM results WHERE run_id = ?');
+        $stmt->execute([$runId]);
+
+        $stmt = $this->pdo->prepare('DELETE FROM runs WHERE id = ?');
+        $stmt->execute([$runId]);
+
+        $this->pdo->exec('VACUUM');
     }
 
     public function clear(): void

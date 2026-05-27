@@ -12,6 +12,14 @@ class Variant
 
     public ?Price $price = null;
 
+    public ?float $temperature = null;
+
+    public ?float $topP = null;
+
+    public ?int $maxTokens = null;
+
+    public ?int $maxSteps = null;
+
     public function __construct(
         public readonly Lab|string $provider,
         public readonly string $model,
@@ -64,6 +72,42 @@ class Variant
     public function hasPricing(): bool
     {
         return $this->price !== null;
+    }
+
+    public function temperature(float $temperature): self
+    {
+        $this->temperature = $temperature;
+
+        return $this;
+    }
+
+    public function topP(float $topP): self
+    {
+        $this->topP = $topP;
+
+        return $this;
+    }
+
+    public function maxTokens(int $maxTokens): self
+    {
+        $this->maxTokens = $maxTokens;
+
+        return $this;
+    }
+
+    public function maxSteps(int $maxSteps): self
+    {
+        $this->maxSteps = $maxSteps;
+
+        return $this;
+    }
+
+    public function hasGenerationOptions(): bool
+    {
+        return $this->temperature !== null
+            || $this->topP !== null
+            || $this->maxTokens !== null
+            || $this->maxSteps !== null;
     }
 
     public function providerValue(): string

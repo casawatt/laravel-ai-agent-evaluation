@@ -34,6 +34,7 @@ class EvaluationSuite
                 $passedWeight = (float) $results->sum(fn (EvaluationResult $r) => $r->passedWeight());
 
                 return [
+                    'variant' => $results->first()?->variant,
                     'passed' => $passed,
                     'failed' => $total - $passed,
                     'total' => $total,
@@ -112,6 +113,11 @@ class EvaluationSuite
     public function hasPricing(): bool
     {
         return $this->results->contains(fn (EvaluationResult $r) => $r->variant->hasPricing());
+    }
+
+    public function hasGenerationOptions(): bool
+    {
+        return $this->results->contains(fn (EvaluationResult $r) => $r->variant->hasGenerationOptions());
     }
 
     public function totalPassed(): int
