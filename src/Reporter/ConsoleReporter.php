@@ -116,9 +116,9 @@ class ConsoleReporter
         if ($hasWeights) {
             $headers[] = 'Score';
         }
-        $headers = [...$headers, 'Avg Latency', 'Tokens In', 'Tokens Out'];
+        $headers = [...$headers, 'Avg Latency', 'Avg Tok In', 'Avg Tok Out'];
         if ($hasPricing) {
-            $headers[] = 'Cost';
+            $headers[] = 'Avg Cost';
         }
         if ($hasParams) {
             $headers[] = 'Params';
@@ -153,11 +153,11 @@ class ConsoleReporter
                 $row[] = $score;
             }
 
-            $row = [...$row, $latency, number_format($summary['total_prompt_tokens']), number_format($summary['total_completion_tokens'])];
+            $row = [...$row, $latency, number_format($summary['avg_prompt_tokens']), number_format($summary['avg_completion_tokens'])];
 
             if ($hasPricing) {
-                $row[] = $summary['total_cost'] !== null
-                    ? $this->formatCost($summary['total_cost'])
+                $row[] = $summary['avg_cost'] !== null
+                    ? $this->formatCost($summary['avg_cost'])
                     : '-';
                 $totalCost += $summary['total_cost'] ?? 0;
             }
@@ -197,15 +197,19 @@ class ConsoleReporter
             $summaryRow[] = "<options=bold>{$totalPassedWeightSum} / {$totalWeightSum} ({$overallScore}%)</>";
         }
 
+        $avgPromptTokens = $totalTests > 0 ? $totalPromptTokens / $totalTests : 0;
+        $avgCompletionTokens = $totalTests > 0 ? $totalCompletionTokens / $totalTests : 0;
+
         $summaryRow = [
             ...$summaryRow,
             "<options=bold>{$avgLatency}</>",
-            '<options=bold>'.number_format($totalPromptTokens).'</>',
-            '<options=bold>'.number_format($totalCompletionTokens).'</>',
+            '<options=bold>'.number_format($avgPromptTokens).'</>',
+            '<options=bold>'.number_format($avgCompletionTokens).'</>',
         ];
 
         if ($hasPricing) {
-            $summaryRow[] = '<options=bold>'.$this->formatCost($totalCost).'</>';
+            $avgCost = $totalTests > 0 ? $totalCost / $totalTests : 0;
+            $summaryRow[] = '<options=bold>'.$this->formatCost($avgCost).'</>';
         }
 
         if ($hasParams) {

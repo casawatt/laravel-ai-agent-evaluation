@@ -74,20 +74,20 @@ class SqliteStorage extends AbstractStorage
 
     public function listRuns(): array
     {
-        $stmt = $this->pdo->query('
+        $stmt = $this->pdo->query(<<<'SQL'
             SELECT
                 r.id,
                 r.created_at,
                 COUNT(res.id) AS result_count,
-                COALESCE(SUM(CASE WHEN res.status = "passed"  THEN 1 ELSE 0 END), 0) AS passed,
-                COALESCE(SUM(CASE WHEN res.status = "failed"  THEN 1 ELSE 0 END), 0) AS failed,
-                COALESCE(SUM(CASE WHEN res.status = "error"   THEN 1 ELSE 0 END), 0) AS errored,
-                COALESCE(SUM(CASE WHEN res.status = "skipped" THEN 1 ELSE 0 END), 0) AS skipped
+                COALESCE(SUM(CASE WHEN res.status = 'passed'  THEN 1 ELSE 0 END), 0) AS passed,
+                COALESCE(SUM(CASE WHEN res.status = 'failed'  THEN 1 ELSE 0 END), 0) AS failed,
+                COALESCE(SUM(CASE WHEN res.status = 'error'   THEN 1 ELSE 0 END), 0) AS errored,
+                COALESCE(SUM(CASE WHEN res.status = 'skipped' THEN 1 ELSE 0 END), 0) AS skipped
             FROM runs r
             LEFT JOIN results res ON res.run_id = r.id
             GROUP BY r.id, r.created_at
             ORDER BY r.created_at DESC
-        ');
+        SQL);
 
         $runs = [];
 

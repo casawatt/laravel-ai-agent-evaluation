@@ -11,10 +11,12 @@ uses(TestCase::class)->in(
     'AssertableStructuredResponseTest.php',
     'EvaluationRunnerTest.php',
     'EvaluationSuiteTest.php',
+    'HtmlReportPresenterTest.php',
     'MakeAgentEvaluationCommandTest.php',
     'ModelsDevCostResolverTest.php',
     'OpenRouterCostResolverTest.php',
     'StorageTest.php',
+    'TruncateErrorsConfigTest.php',
     'VariantTest.php',
 );
 

@@ -17,8 +17,8 @@ class HtmlReportPresenter
      *         errored: int,
      *         skipped: int,
      *         avg_latency: float|null,
-     *         sum_tokens: int,
-     *         sum_cost: float|null,
+     *         avg_tokens: float|null,
+     *         avg_cost: float|null,
      *         avg_score_percent: float|null,
      *         metrics: array<string, float>
      *     }>
@@ -75,8 +75,8 @@ class HtmlReportPresenter
      *     errored: int,
      *     skipped: int,
      *     avg_latency: float|null,
-     *     sum_tokens: int,
-     *     sum_cost: float|null,
+     *     avg_tokens: float|null,
+     *     avg_cost: float|null,
      *     avg_score_percent: float|null,
      *     metrics: array<string, float>
      * }>
@@ -93,7 +93,7 @@ class HtmlReportPresenter
             $errored = 0;
             $skipped = 0;
             $latencies = [];
-            $tokens = 0;
+            $tokenTotals = [];
             $costs = [];
             $scorePercents = [];
             /** @var array<string, array{passed: float, total: float}> $metricBuckets */
@@ -113,8 +113,8 @@ class HtmlReportPresenter
                 }
 
                 if (isset($row['usage']) && is_array($row['usage'])) {
-                    $tokens += (int) ($row['usage']['prompt_tokens'] ?? 0);
-                    $tokens += (int) ($row['usage']['completion_tokens'] ?? 0);
+                    $tokenTotals[] = (int) ($row['usage']['prompt_tokens'] ?? 0)
+                        + (int) ($row['usage']['completion_tokens'] ?? 0);
                 }
 
                 if (isset($row['cost']) && is_numeric($row['cost'])) {
@@ -158,8 +158,8 @@ class HtmlReportPresenter
                 'errored' => $errored,
                 'skipped' => $skipped,
                 'avg_latency' => $latencies === [] ? null : array_sum($latencies) / count($latencies),
-                'sum_tokens' => $tokens,
-                'sum_cost' => $costs === [] ? null : array_sum($costs),
+                'avg_tokens' => $tokenTotals === [] ? null : (float) (array_sum($tokenTotals) / count($tokenTotals)),
+                'avg_cost' => $costs === [] ? null : array_sum($costs) / count($costs),
                 'avg_score_percent' => $scorePercents === [] ? null : array_sum($scorePercents) / count($scorePercents),
                 'metrics' => $metrics,
             ];

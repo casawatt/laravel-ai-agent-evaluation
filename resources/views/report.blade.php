@@ -39,7 +39,7 @@
             : number_format($seconds, 2).' s';
     };
 
-    $formatTokens = static fn (int $t) => number_format($t).' tok';
+    $formatTokens = static fn (?float $t) => $t === null ? '—' : number_format($t).' tok';
 
     $formatCost = static function (?float $cost): string {
         if ($cost === null) {
@@ -104,8 +104,8 @@
                         </div>
                         <dl class="mt-3 space-y-0.5 text-xs text-slate-600">
                             <div class="flex justify-between"><dt>Avg latency</dt><dd class="font-mono">{{ $formatLatency($t['avg_latency']) }}</dd></div>
-                            <div class="flex justify-between"><dt>Tokens</dt><dd class="font-mono">{{ $formatTokens($t['sum_tokens']) }}</dd></div>
-                            <div class="flex justify-between"><dt>Cost</dt><dd class="font-mono">{{ $formatCost($t['sum_cost']) }}</dd></div>
+                            <div class="flex justify-between"><dt>Avg tokens</dt><dd class="font-mono">{{ $formatTokens($t['avg_tokens']) }}</dd></div>
+                            <div class="flex justify-between"><dt>Avg cost</dt><dd class="font-mono">{{ $formatCost($t['avg_cost']) }}</dd></div>
                             @if ($t['avg_score_percent'] !== null)
                                 <div class="flex justify-between"><dt>Avg score</dt><dd class="font-mono">{{ number_format($t['avg_score_percent']) }}%</dd></div>
                             @endif

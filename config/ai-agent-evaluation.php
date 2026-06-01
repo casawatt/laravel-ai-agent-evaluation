@@ -22,10 +22,13 @@ return [
      * Truncation length for HTTP error response bodies surfaced via
      * Illuminate\Http\Client\RequestException (used by the Laravel AI SDK).
      *
-     * - false (default): never truncate — full provider error body in failure messages
-     * - int:             truncate at that many characters (Laravel's default is 120)
+     * This setting mutates a global on the host application, so it is opt-in:
+     *
+     * - null (default): leave Laravel's behavior untouched (truncates at 120)
+     * - false: never truncate — full provider error body in failure messages
+     * - int: truncate at that many characters
      */
-    'truncate_errors_at' => false,
+    'truncate_errors_at' => null,
 
     /*
      * Number of cases to run in parallel. Requires the pcntl extension.

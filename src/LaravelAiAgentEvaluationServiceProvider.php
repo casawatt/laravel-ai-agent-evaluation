@@ -45,7 +45,7 @@ class LaravelAiAgentEvaluationServiceProvider extends PackageServiceProvider
 
         $truncateAt = config('ai-agent-evaluation.truncate_errors_at');
 
-        if (! $truncateAt) {
+        if ($truncateAt === false) {
             RequestException::dontTruncate();
         } elseif (is_int($truncateAt)) {
             RequestException::truncateAt($truncateAt);

@@ -168,7 +168,7 @@ $this->variant(Lab::Anthropic, 'claude-sonnet-4-20250514')
     ->pricing(inputPerMillion: 3.00, outputPerMillion: 15.00);
 ```
 
-When at least one variant has pricing, the variant summary table shows a **Cost** column. Variants without pricing show `—`.
+When at least one variant has pricing, the variant summary table shows an **Avg Cost** column (average cost per case). Variants without pricing show `—`.
 
 #### Cost Resolvers
 
@@ -319,10 +319,10 @@ public function evaluates_response_quality(): void
 The variant summary table shows a **Score** column with weighted percentages:
 
 ```
-| Variant      | Results       | Score              | Avg Latency | Tokens In | Tokens Out |
-|--------------|---------------|--------------------|-------------|-----------|------------|
-| openai/gpt4  | 3/4 (75.0%)   | 2.3/3.3 (69.7%)   | 320ms       | 200       | 3,000      |
-| mistral/sm   | 2/4 (50.0%)   | 1.3/3.3 (39.4%)   | 210ms       | 180       | 2,500      |
+| Variant      | Results       | Score              | Avg Latency | Avg Tok In | Avg Tok Out |
+|--------------|---------------|--------------------|-------------|------------|-------------|
+| openai/gpt4  | 3/4 (75.0%)   | 2.3/3.3 (69.7%)   | 320ms       | 200        | 750         |
+| mistral/sm   | 2/4 (50.0%)   | 1.3/3.3 (39.4%)   | 210ms       | 180        | 625         |
 ```
 
 ## Metrics
