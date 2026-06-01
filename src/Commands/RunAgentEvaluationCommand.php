@@ -19,6 +19,7 @@ class RunAgentEvaluationCommand extends Command
         {--variant= : Filter to a specific variant by label}
         {--resume : Resume the latest evaluation, skipping already-run cases}
         {--retry-errors : Retry only error results from the latest evaluation}
+        {--retry-failed : Retry only failed results from the latest evaluation}
         {--parallel=0 : Number of cases to run in parallel (requires pcntl)}';
 
     protected $description = 'Run AI agent evaluations';
@@ -185,7 +186,7 @@ class RunAgentEvaluationCommand extends Command
      */
     private function loadPreviousResults(StorageInterface $storage): array
     {
-        if (! $this->option('resume') && ! $this->option('retry-errors')) {
+        if (! $this->option('resume') && ! $this->option('retry-errors') && ! $this->option('retry-failed')) {
             return [null, null];
         }
 
@@ -201,6 +202,12 @@ class RunAgentEvaluationCommand extends Command
             $this->components->info("Retrying errors from run {$latestRunId}...");
 
             return [new Collection($storage->getResultsExcludingStatus($latestRunId, ResultStatus::Error)), $latestRunId];
+        }
+
+        if ($this->option('retry-failed')) {
+            $this->components->info("Retrying failures from run {$latestRunId}...");
+
+            return [new Collection($storage->getResultsExcludingStatus($latestRunId, ResultStatus::Failed)), $latestRunId];
         }
 
         $this->components->info("Resuming run {$latestRunId}...");

@@ -19,6 +19,18 @@ return [
     'timeout' => 120,
 
     /*
+     * Truncation length for HTTP error response bodies surfaced via
+     * Illuminate\Http\Client\RequestException (used by the Laravel AI SDK).
+     *
+     * This setting mutates a global on the host application, so it is opt-in:
+     *
+     * - null (default): leave Laravel's behavior untouched (truncates at 120)
+     * - false: never truncate — full provider error body in failure messages
+     * - int: truncate at that many characters
+     */
+    'truncate_errors_at' => null,
+
+    /*
      * Number of cases to run in parallel. Requires the pcntl extension.
      * Set to 1 for sequential execution. Override per-run with --parallel.
      */

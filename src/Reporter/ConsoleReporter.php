@@ -4,6 +4,7 @@ namespace Casawatt\LaravelAiAgentEvaluation\Reporter;
 
 use Casawatt\LaravelAiAgentEvaluation\EvaluationResult;
 use Casawatt\LaravelAiAgentEvaluation\EvaluationSuite;
+use Casawatt\LaravelAiAgentEvaluation\Variant;
 use Illuminate\Support\Collection;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableSeparator;
@@ -107,6 +108,7 @@ class ConsoleReporter
     {
         $hasWeights = $suite->hasWeightedAssertions();
         $hasPricing = $suite->hasPricing();
+        $hasParams = $suite->hasGenerationOptions();
 
         $table = new Table($this->output);
 
@@ -114,9 +116,12 @@ class ConsoleReporter
         if ($hasWeights) {
             $headers[] = 'Score';
         }
-        $headers = [...$headers, 'Avg Latency', 'Tokens In', 'Tokens Out'];
+        $headers = [...$headers, 'Avg Latency', 'Avg Tok In', 'Avg Tok Out'];
         if ($hasPricing) {
-            $headers[] = 'Cost';
+            $headers[] = 'Avg Cost';
+        }
+        if ($hasParams) {
+            $headers[] = 'Params';
         }
         $table->setHeaders($headers);
 
@@ -148,13 +153,20 @@ class ConsoleReporter
                 $row[] = $score;
             }
 
-            $row = [...$row, $latency, number_format($summary['total_prompt_tokens']), number_format($summary['total_completion_tokens'])];
+            $row = [...$row, $latency, number_format($summary['avg_prompt_tokens']), number_format($summary['avg_completion_tokens'])];
 
             if ($hasPricing) {
-                $row[] = $summary['total_cost'] !== null
-                    ? $this->formatCost($summary['total_cost'])
+                $row[] = $summary['avg_cost'] !== null
+                    ? $this->formatCost($summary['avg_cost'])
                     : '-';
                 $totalCost += $summary['total_cost'] ?? 0;
+            }
+
+            if ($hasParams) {
+                $params = $summary['variant'] !== null
+                    ? $this->formatGenerationParams($summary['variant'])
+                    : '';
+                $row[] = $params !== '' ? $params : '-';
             }
 
             $table->addRow($row);
@@ -185,15 +197,23 @@ class ConsoleReporter
             $summaryRow[] = "<options=bold>{$totalPassedWeightSum} / {$totalWeightSum} ({$overallScore}%)</>";
         }
 
+        $avgPromptTokens = $totalTests > 0 ? $totalPromptTokens / $totalTests : 0;
+        $avgCompletionTokens = $totalTests > 0 ? $totalCompletionTokens / $totalTests : 0;
+
         $summaryRow = [
             ...$summaryRow,
             "<options=bold>{$avgLatency}</>",
-            '<options=bold>'.number_format($totalPromptTokens).'</>',
-            '<options=bold>'.number_format($totalCompletionTokens).'</>',
+            '<options=bold>'.number_format($avgPromptTokens).'</>',
+            '<options=bold>'.number_format($avgCompletionTokens).'</>',
         ];
 
         if ($hasPricing) {
-            $summaryRow[] = '<options=bold>'.$this->formatCost($totalCost).'</>';
+            $avgCost = $totalTests > 0 ? $totalCost / $totalTests : 0;
+            $summaryRow[] = '<options=bold>'.$this->formatCost($avgCost).'</>';
+        }
+
+        if ($hasParams) {
+            $summaryRow[] = '';
         }
 
         $table->addRow($summaryRow);
@@ -259,6 +279,26 @@ class ConsoleReporter
         }
 
         return number_format($seconds, 1).'s';
+    }
+
+    private function formatGenerationParams(Variant $variant): string
+    {
+        $parts = [];
+
+        if ($variant->temperature !== null) {
+            $parts[] = 'temp='.$variant->temperature;
+        }
+        if ($variant->topP !== null) {
+            $parts[] = 'topP='.$variant->topP;
+        }
+        if ($variant->maxTokens !== null) {
+            $parts[] = 'maxTok='.$variant->maxTokens;
+        }
+        if ($variant->maxSteps !== null) {
+            $parts[] = 'maxSteps='.$variant->maxSteps;
+        }
+
+        return implode(' ', $parts);
     }
 
     private function shortenProviderLabel(string $label): string

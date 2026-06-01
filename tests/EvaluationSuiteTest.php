@@ -79,6 +79,8 @@ it('generates provider summaries', function () {
     expect($openai['pass_rate'])->toBe(0.5);
     expect($openai['total_prompt_tokens'])->toBe(180);
     expect($openai['total_completion_tokens'])->toBe(90);
+    expect($openai['avg_prompt_tokens'])->toBe(90.0);
+    expect($openai['avg_completion_tokens'])->toBe(45.0);
 
     $anthropic = $summaries->get('anthropic/claude-haiku-4-5-20251001');
     expect($anthropic['passed'])->toBe(2);
@@ -137,6 +139,31 @@ it('returns null cost when variant has no pricing', function () {
     expect($result->cost())->toBeNull();
 });
 
+it('exposes generation options through the suite and summaries', function () {
+    $suite = new EvaluationSuite('TestEvaluation', 'App\\Agent');
+
+    $variant = (new Variant(Lab::OpenAI, 'gpt-4o-mini'))->temperature(0.2)->maxTokens(512);
+
+    $suite->add(new EvaluationResult(
+        evaluationName: 'TestEvaluation',
+        caseName: 'case_one',
+        caseDescription: 'case one',
+        variant: $variant,
+        status: ResultStatus::Passed,
+        latencySeconds: 0.5,
+        usage: new Usage(promptTokens: 100, completionTokens: 50),
+    ));
+
+    expect($suite->hasGenerationOptions())->toBeTrue();
+
+    $summary = $suite->providerSummaries()->get('openai/gpt-4o-mini');
+    expect($summary['variant'])->toBe($variant);
+});
+
+it('reports no generation options when none are set', function () {
+    expect(makeSuiteWithResults()->hasGenerationOptions())->toBeFalse();
+});
+
 it('includes cost in provider summaries', function () {
     $suite = new EvaluationSuite('TestEvaluation', 'App\\Agent');
 
@@ -158,5 +185,7 @@ it('includes cost in provider summaries', function () {
 
     expect($openai['total_cost'])->toBeFloat();
     expect($openai['total_cost'])->toBeGreaterThan(0);
+    expect($openai['avg_cost'])->toBeFloat();
+    expect($openai['avg_cost'])->toBe($openai['total_cost']); // single result: avg == total
     expect($suite->hasPricing())->toBeTrue();
 });

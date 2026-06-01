@@ -45,9 +45,8 @@ it('resolves pricing for a known provider and model', function () {
     $price = $resolver->resolve(Lab::OpenAI, 'gpt-4o-mini');
 
     expect($price)->not->toBeNull();
-    // models.dev pricing is per 1K tokens, so 0.15/1K = 150/1M
-    expect($price->inputPerMillion)->toBe(150.0);
-    expect($price->outputPerMillion)->toBe(600.0);
+    expect($price->inputPerMillion)->toBe(0.15);
+    expect($price->outputPerMillion)->toBe(0.60);
 });
 
 it('resolves pricing for Anthropic models', function () {
@@ -57,8 +56,8 @@ it('resolves pricing for Anthropic models', function () {
     $price = $resolver->resolve(Lab::Anthropic, 'claude-sonnet-4-20250514');
 
     expect($price)->not->toBeNull();
-    expect($price->inputPerMillion)->toBe(3000.0);
-    expect($price->outputPerMillion)->toBe(15000.0);
+    expect($price->inputPerMillion)->toBe(3.0);
+    expect($price->outputPerMillion)->toBe(15.0);
 });
 
 it('returns null for unknown provider', function () {
@@ -92,7 +91,7 @@ it('accepts string provider', function () {
     $price = $resolver->resolve('openai', 'gpt-4o-mini');
 
     expect($price)->not->toBeNull();
-    expect($price->inputPerMillion)->toBe(150.0);
+    expect($price->inputPerMillion)->toBe(0.15);
 });
 
 it('caches API response across multiple resolve calls', function () {

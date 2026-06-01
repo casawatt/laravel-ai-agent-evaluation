@@ -34,6 +34,7 @@ class EvaluationSuite
                 $passedWeight = (float) $results->sum(fn (EvaluationResult $r) => $r->passedWeight());
 
                 return [
+                    'variant' => $results->first()?->variant,
                     'passed' => $passed,
                     'failed' => $total - $passed,
                     'total' => $total,
@@ -42,11 +43,16 @@ class EvaluationSuite
                     'total_latency' => (float) ($results->sum('latencySeconds') ?? 0),
                     'total_prompt_tokens' => (int) $results->sum(fn (EvaluationResult $r) => $r->usage->promptTokens ?? 0),
                     'total_completion_tokens' => (int) $results->sum(fn (EvaluationResult $r) => $r->usage->completionTokens ?? 0),
+                    'avg_prompt_tokens' => (float) ($results->avg(fn (EvaluationResult $r) => $r->usage?->promptTokens) ?? 0),
+                    'avg_completion_tokens' => (float) ($results->avg(fn (EvaluationResult $r) => $r->usage?->completionTokens) ?? 0),
                     'total_weight' => $totalWeight,
                     'passed_weight' => $passedWeight,
                     'score' => $totalWeight > 0 ? (float) ($passedWeight / $totalWeight) : null,
                     'total_cost' => $results->contains(fn (EvaluationResult $r) => $r->cost() !== null)
                                     ? (float) $results->sum(fn (EvaluationResult $r) => $r->cost() ?? 0)
+                                    : null,
+                    'avg_cost' => $results->contains(fn (EvaluationResult $r) => $r->cost() !== null)
+                                    ? (float) $results->avg(fn (EvaluationResult $r) => $r->cost())
                                     : null,
                 ];
             });
@@ -112,6 +118,11 @@ class EvaluationSuite
     public function hasPricing(): bool
     {
         return $this->results->contains(fn (EvaluationResult $r) => $r->variant->hasPricing());
+    }
+
+    public function hasGenerationOptions(): bool
+    {
+        return $this->results->contains(fn (EvaluationResult $r) => $r->variant->hasGenerationOptions());
     }
 
     public function totalPassed(): int

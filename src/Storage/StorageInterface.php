@@ -29,11 +29,31 @@ interface StorageInterface
     public function getLatestRunId(): ?string;
 
     /**
+     * List all runs, newest first, with status counts.
+     *
+     * @return array<int, array{
+     *     id: string,
+     *     created_at: string,
+     *     result_count: int,
+     *     passed: int,
+     *     failed: int,
+     *     errored: int,
+     *     skipped: int
+     * }>
+     */
+    public function listRuns(): array;
+
+    /**
      * Get all result keys for a run, optionally excluding a given status.
      *
      * @return array<string, array> Keyed by result_key.
      */
     public function getResultsExcludingStatus(string $runId, ResultStatus $excludeStatus): array;
+
+    /**
+     * Delete a single run and all its results.
+     */
+    public function deleteRun(string $runId): void;
 
     /**
      * Delete all runs and results.

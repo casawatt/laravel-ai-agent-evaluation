@@ -50,10 +50,9 @@ class ModelsDevCostResolver implements CostResolverInterface
         $input = (float) ($cost['input'] ?? 0);
         $output = (float) ($cost['output'] ?? 0);
 
-        // models.dev pricing is per 1K tokens, convert to per 1M tokens
         return new Price(
-            inputPerMillion: $input * 1_000,
-            outputPerMillion: $output * 1_000,
+            inputPerMillion: $input,
+            outputPerMillion: $output,
         );
     }
 }

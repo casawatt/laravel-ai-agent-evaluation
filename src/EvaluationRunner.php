@@ -367,6 +367,7 @@ class EvaluationRunner
             $latency = $responses->sum('latencySeconds');
             $usage = $this->aggregateUsage($responses);
             $lastText = $responses->last()?->response->text;
+            $lastPrompt = $responses->last()?->prompt;
             $assertionResults = $this->collectAssertionResults($responses);
             $hasFailed = $assertionResults->contains(fn (AssertionResult $r) => ! $r->passed);
 
@@ -382,6 +383,7 @@ class EvaluationRunner
                 latencySeconds: $latency,
                 usage: $usage,
                 responseText: $lastText,
+                promptText: $lastPrompt,
                 assertionResults: $assertionResults->isNotEmpty() ? $assertionResults : null,
                 agentClass: $agentClass,
             );

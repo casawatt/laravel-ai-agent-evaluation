@@ -71,6 +71,62 @@ class FileStorage extends AbstractStorage
         return basename(end($dirs));
     }
 
+    public function listRuns(): array
+    {
+        $dirs = glob($this->basePath.'/20*', GLOB_ONLYDIR);
+
+        if ($dirs === false || $dirs === []) {
+            return [];
+        }
+
+        rsort($dirs);
+
+        $runs = [];
+
+        foreach ($dirs as $dir) {
+            $runId = basename($dir);
+            $counts = ['passed' => 0, 'failed' => 0, 'errored' => 0, 'skipped' => 0];
+            $resultCount = 0;
+
+            foreach ((array) glob($dir.'/*.json') as $file) {
+                $data = json_decode((string) file_get_contents($file), true);
+
+                if (! is_array($data)) {
+                    continue;
+                }
+
+                $resultCount++;
+
+                match ($data['status'] ?? null) {
+                    'passed' => $counts['passed']++,
+                    'failed' => $counts['failed']++,
+                    'error' => $counts['errored']++,
+                    'skipped' => $counts['skipped']++,
+                    default => null,
+                };
+            }
+
+            $runs[] = [
+                'id' => $runId,
+                'created_at' => $this->parseCreatedAt($runId),
+                'result_count' => $resultCount,
+                'passed' => $counts['passed'],
+                'failed' => $counts['failed'],
+                'errored' => $counts['errored'],
+                'skipped' => $counts['skipped'],
+            ];
+        }
+
+        return $runs;
+    }
+
+    private function parseCreatedAt(string $runId): string
+    {
+        $timestamp = strtotime(substr($runId, 0, 17));
+
+        return $timestamp !== false ? date('Y-m-d\TH:i:sP', $timestamp) : $runId;
+    }
+
     public function getResultsExcludingStatus(string $runId, ResultStatus $excludeStatus): array
     {
         $all = $this->getResults($runId);
@@ -79,6 +135,15 @@ class FileStorage extends AbstractStorage
             $all,
             fn (array $result) => ($result['status'] ?? '') !== $excludeStatus->value,
         );
+    }
+
+    public function deleteRun(string $runId): void
+    {
+        $dir = $this->basePath.'/'.$runId;
+
+        if (is_dir($dir)) {
+            $this->deleteDirectory($dir);
+        }
     }
 
     public function clear(): void
