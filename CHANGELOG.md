@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.8.0 - 2026-06-12
+
+- Laravel AI 0.8
+
 ## v0.7.0 - 2026-06-01
 
 - Add `--retry-failed` option to re-run only failed cases from the latest run
