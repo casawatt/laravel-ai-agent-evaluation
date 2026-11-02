@@ -3,12 +3,12 @@
 use Casawatt\LaravelAiAgentEvaluation\AssertableResponse;
 use Laravel\Ai\Responses\AgentResponse;
 use Laravel\Ai\Responses\Data\Meta;
+use Laravel\Ai\Responses\Data\TextUsage;
 use Laravel\Ai\Responses\Data\ToolCall;
-use Laravel\Ai\Responses\Data\Usage;
 
-function makeResponse(string $text = 'Hello World', ?Usage $usage = null, array $toolCalls = []): AssertableResponse
+function makeResponse(string $text = 'Hello World', ?TextUsage $usage = null, array $toolCalls = []): AssertableResponse
 {
-    $usage ??= new Usage(promptTokens: 100, completionTokens: 50);
+    $usage ??= new TextUsage(inputTokens: 100, outputTokens: 50);
     $meta = new Meta(provider: 'openai', model: 'gpt-4o-mini');
     $response = new AgentResponse('test-id', $text, $usage, $meta);
 
@@ -156,13 +156,13 @@ it('records failure for assertLatencyBelow when too slow', function () {
 });
 
 it('passes assertTokensBelow', function () {
-    $r = makeResponse('Hello', new Usage(promptTokens: 50, completionTokens: 30))
+    $r = makeResponse('Hello', new TextUsage(inputTokens: 50, outputTokens: 30))
         ->assertTokensBelow(100);
     expect($r->getAssertionResults()->first()->passed)->toBeTrue();
 });
 
 it('records failure for assertTokensBelow when too many tokens', function () {
-    $r = makeResponse('Hello', new Usage(promptTokens: 50, completionTokens: 30))
+    $r = makeResponse('Hello', new TextUsage(inputTokens: 50, outputTokens: 30))
         ->assertTokensBelow(50);
     expect($r->getAssertionResults()->first()->passed)->toBeFalse();
 });

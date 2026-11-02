@@ -81,7 +81,7 @@ abstract class AbstractAssertableResponse
 
     public function assertTokensBelow(int $maxTokens, string $message = '', float $weight = 1.0, ?string $metric = null): static
     {
-        $total = $this->response->usage->promptTokens + $this->response->usage->completionTokens;
+        $total = $this->response->usage->totalTokens();
 
         $this->runAssertion('assertTokensBelow', function () use ($maxTokens, $total, $message) {
             if ($total >= $maxTokens) {

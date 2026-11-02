@@ -3,7 +3,7 @@
 namespace Casawatt\LaravelAiAgentEvaluation;
 
 use Illuminate\Support\Collection;
-use Laravel\Ai\Responses\Data\Usage;
+use Laravel\Ai\Responses\Data\TextUsage;
 
 class SuiteBuilder
 {
@@ -83,9 +83,9 @@ class SuiteBuilder
             failureMessage: $data['failure_message'] ?? null,
             skipReason: $data['skip_reason'] ?? null,
             latencySeconds: $data['latency_seconds'] ?? null,
-            usage: isset($data['usage']) ? new Usage(
-                promptTokens: $data['usage']['prompt_tokens'] ?? 0,
-                completionTokens: $data['usage']['completion_tokens'] ?? 0,
+            usage: isset($data['usage']) ? new TextUsage(
+                inputTokens: $data['usage']['input_tokens'] ?? $data['usage']['prompt_tokens'] ?? 0,
+                outputTokens: $data['usage']['output_tokens'] ?? $data['usage']['completion_tokens'] ?? 0,
             ) : null,
             responseText: $data['response_text'] ?? null,
             assertionResults: $assertionResults,

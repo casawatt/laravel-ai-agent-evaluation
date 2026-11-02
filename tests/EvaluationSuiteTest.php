@@ -5,7 +5,7 @@ use Casawatt\LaravelAiAgentEvaluation\EvaluationSuite;
 use Casawatt\LaravelAiAgentEvaluation\ResultStatus;
 use Casawatt\LaravelAiAgentEvaluation\Variant;
 use Laravel\Ai\Enums\Lab;
-use Laravel\Ai\Responses\Data\Usage;
+use Laravel\Ai\Responses\Data\TextUsage;
 
 function makeSuiteWithResults(): EvaluationSuite
 {
@@ -21,7 +21,7 @@ function makeSuiteWithResults(): EvaluationSuite
         variant: $openai,
         status: ResultStatus::Passed,
         latencySeconds: 0.5,
-        usage: new Usage(promptTokens: 100, completionTokens: 50),
+        usage: new TextUsage(inputTokens: 100, outputTokens: 50),
     ));
 
     $suite->add(new EvaluationResult(
@@ -32,7 +32,7 @@ function makeSuiteWithResults(): EvaluationSuite
         status: ResultStatus::Failed,
         failureMessage: 'Expected contains "hello"',
         latencySeconds: 0.3,
-        usage: new Usage(promptTokens: 80, completionTokens: 40),
+        usage: new TextUsage(inputTokens: 80, outputTokens: 40),
     ));
 
     $suite->add(new EvaluationResult(
@@ -42,7 +42,7 @@ function makeSuiteWithResults(): EvaluationSuite
         variant: $anthropic,
         status: ResultStatus::Passed,
         latencySeconds: 0.7,
-        usage: new Usage(promptTokens: 90, completionTokens: 45),
+        usage: new TextUsage(inputTokens: 90, outputTokens: 45),
     ));
 
     $suite->add(new EvaluationResult(
@@ -52,7 +52,7 @@ function makeSuiteWithResults(): EvaluationSuite
         variant: $anthropic,
         status: ResultStatus::Passed,
         latencySeconds: 0.4,
-        usage: new Usage(promptTokens: 85, completionTokens: 42),
+        usage: new TextUsage(inputTokens: 85, outputTokens: 42),
     ));
 
     return $suite;
@@ -99,7 +99,7 @@ it('reports all passed when no failures', function () {
         variant: $variant,
         status: ResultStatus::Passed,
         latencySeconds: 0.5,
-        usage: new Usage(promptTokens: 100, completionTokens: 50),
+        usage: new TextUsage(inputTokens: 100, outputTokens: 50),
     ));
 
     expect($suite->allPassed())->toBeTrue();
@@ -116,7 +116,7 @@ it('computes cost from variant pricing', function () {
         variant: $variant,
         status: ResultStatus::Passed,
         latencySeconds: 0.5,
-        usage: new Usage(promptTokens: 1_000_000, completionTokens: 500_000),
+        usage: new TextUsage(inputTokens: 1_000_000, outputTokens: 500_000),
     );
 
     // 1M input * $0.15/M + 500K output * $0.60/M = $0.15 + $0.30 = $0.45
@@ -133,7 +133,7 @@ it('returns null cost when variant has no pricing', function () {
         variant: $variant,
         status: ResultStatus::Passed,
         latencySeconds: 0.5,
-        usage: new Usage(promptTokens: 100, completionTokens: 50),
+        usage: new TextUsage(inputTokens: 100, outputTokens: 50),
     );
 
     expect($result->cost())->toBeNull();
@@ -151,7 +151,7 @@ it('exposes generation options through the suite and summaries', function () {
         variant: $variant,
         status: ResultStatus::Passed,
         latencySeconds: 0.5,
-        usage: new Usage(promptTokens: 100, completionTokens: 50),
+        usage: new TextUsage(inputTokens: 100, outputTokens: 50),
     ));
 
     expect($suite->hasGenerationOptions())->toBeTrue();
@@ -177,7 +177,7 @@ it('includes cost in provider summaries', function () {
         variant: $variant,
         status: ResultStatus::Passed,
         latencySeconds: 0.5,
-        usage: new Usage(promptTokens: 100, completionTokens: 50),
+        usage: new TextUsage(inputTokens: 100, outputTokens: 50),
     ));
 
     $summaries = $suite->providerSummaries();

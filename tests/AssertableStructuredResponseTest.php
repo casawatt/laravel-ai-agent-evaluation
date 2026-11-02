@@ -2,12 +2,12 @@
 
 use Casawatt\LaravelAiAgentEvaluation\AssertableStructuredResponse;
 use Laravel\Ai\Responses\Data\Meta;
-use Laravel\Ai\Responses\Data\Usage;
+use Laravel\Ai\Responses\Data\TextUsage;
 use Laravel\Ai\Responses\StructuredAgentResponse;
 
-function makeStructuredResponse(array $structured, ?Usage $usage = null): AssertableStructuredResponse
+function makeStructuredResponse(array $structured, ?TextUsage $usage = null): AssertableStructuredResponse
 {
-    $usage ??= new Usage(promptTokens: 100, completionTokens: 50);
+    $usage ??= new TextUsage(inputTokens: 100, outputTokens: 50);
     $meta = new Meta(provider: 'openai', model: 'gpt-4o-mini');
     $text = json_encode($structured);
     $response = new StructuredAgentResponse('test-id', $structured, $text, $usage, $meta);

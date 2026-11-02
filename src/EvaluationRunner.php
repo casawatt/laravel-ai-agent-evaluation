@@ -8,7 +8,7 @@ use Casawatt\LaravelAiAgentEvaluation\Exceptions\AssertionFailureException;
 use Casawatt\LaravelAiAgentEvaluation\Storage\StorageInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
-use Laravel\Ai\Responses\Data\Usage;
+use Laravel\Ai\Responses\Data\TextUsage;
 use ReflectionClass;
 use ReflectionMethod;
 use Symfony\Component\Finder\Finder;
@@ -434,11 +434,11 @@ class EvaluationRunner
         }
     }
 
-    private function aggregateUsage(Collection $responses): Usage
+    private function aggregateUsage(Collection $responses): TextUsage
     {
         return $responses->reduce(
-            fn (Usage $carry, AbstractAssertableResponse $r) => $carry->add($r->response->usage),
-            new Usage,
+            fn (TextUsage $carry, AbstractAssertableResponse $r) => $carry->add($r->response->usage),
+            new TextUsage,
         );
     }
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.3.0 - 2026-11-02
+
+- Laravel AI 1.3 (`EvaluationResult::$usage` is now a `TextUsage`; use `inputTokens` / `outputTokens`)
+- Require PHP 8.4+ and Laravel 12+ (drop PHP 8.3 and Laravel 11)
+- Results stored by previous versions remain readable for `--resume` / `--retry-errors`
+
 ## v0.8.0 - 2026-06-12
 
 - Laravel AI 0.8

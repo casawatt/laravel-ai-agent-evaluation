@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\File;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Responses\AgentResponse;
 use Laravel\Ai\Responses\Data\Meta;
-use Laravel\Ai\Responses\Data\Usage;
+use Laravel\Ai\Responses\Data\TextUsage;
 
 beforeEach(function () {
     $this->tempPath = sys_get_temp_dir().'/eval-runner-test-'.uniqid();
@@ -76,7 +76,7 @@ function bindFakeAgent(?callable $responseFactory = null): void
         return new AgentResponse(
             'inv-123',
             $text,
-            new Usage(promptTokens: 50, completionTokens: 25),
+            new TextUsage(inputTokens: 50, outputTokens: 25),
             new Meta(
                 provider: $provider instanceof Lab ? $provider->value : ($provider ?? 'unknown'),
                 model: $model,
@@ -137,7 +137,7 @@ it('records failures when assertions fail', function () {
     bindFakeAgent(fn ($prompt, $provider, $model) => new AgentResponse(
         'inv-123',
         'No greeting here',
-        new Usage(promptTokens: 50, completionTokens: 25),
+        new TextUsage(inputTokens: 50, outputTokens: 25),
         new Meta(provider: 'openai', model: 'gpt-4o-mini'),
     ));
 
@@ -185,8 +185,8 @@ it('captures latency and usage', function () {
 
     expect($result->latencySeconds)->toBeGreaterThan(0);
     expect($result->usage)->not->toBeNull();
-    expect($result->usage->promptTokens)->toBe(50);
-    expect($result->usage->completionTokens)->toBe(25);
+    expect($result->usage->inputTokens)->toBe(50);
+    expect($result->usage->outputTokens)->toBe(25);
 });
 
 it('extracts case description from attribute', function () {
@@ -358,7 +358,7 @@ it('expands cases with #[With] data provider', function () {
 
         return new AgentResponse(
             'inv-123', $text,
-            new Usage(promptTokens: 50, completionTokens: 25),
+            new TextUsage(inputTokens: 50, outputTokens: 25),
             new Meta(provider: 'openai', model: 'gpt-4o-mini'),
         );
     });

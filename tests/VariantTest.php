@@ -65,3 +65,19 @@ it('reconstructs generation options from stored data', function () {
         ->and($result->variant->maxTokens)->toBe(512)
         ->and($result->variant->maxSteps)->toBe(3);
 });
+
+it('reconstructs usage from current and legacy stored keys', function (array $usage) {
+    $result = SuiteBuilder::buildResult([
+        'case' => 'case',
+        'provider' => 'openai',
+        'model' => 'gpt-4o-mini',
+        'status' => 'passed',
+        'usage' => $usage,
+    ], 'E');
+
+    expect($result->usage->inputTokens)->toBe(100)
+        ->and($result->usage->outputTokens)->toBe(50);
+})->with([
+    'current' => [['input_tokens' => 100, 'output_tokens' => 50]],
+    'legacy' => [['prompt_tokens' => 100, 'completion_tokens' => 50]],
+]);

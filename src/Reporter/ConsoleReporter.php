@@ -88,7 +88,7 @@ class ConsoleReporter
                     : '-';
 
                 $tokens = $result->usage !== null
-                    ? ($result->usage->promptTokens + $result->usage->completionTokens).'tok'
+                    ? $result->usage->totalTokens().'tok'
                     : '-';
 
                 $score = $result->hasWeightedAssertions()

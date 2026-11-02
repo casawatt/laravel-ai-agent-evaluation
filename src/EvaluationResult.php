@@ -3,7 +3,7 @@
 namespace Casawatt\LaravelAiAgentEvaluation;
 
 use Illuminate\Support\Collection;
-use Laravel\Ai\Responses\Data\Usage;
+use Laravel\Ai\Responses\Data\TextUsage;
 
 class EvaluationResult
 {
@@ -16,7 +16,7 @@ class EvaluationResult
         public readonly ?string $failureMessage = null,
         public readonly ?string $skipReason = null,
         public readonly ?float $latencySeconds = null,
-        public readonly ?Usage $usage = null,
+        public readonly ?TextUsage $usage = null,
         public readonly ?string $responseText = null,
         public readonly ?string $promptText = null,
         public readonly ?\Throwable $exception = null,
@@ -77,8 +77,8 @@ class EvaluationResult
             return null;
         }
 
-        return ($this->usage->promptTokens * $this->variant->price->inputPerMillion
-            + $this->usage->completionTokens * $this->variant->price->outputPerMillion) / 1_000_000;
+        return ($this->usage->inputTokens * $this->variant->price->inputPerMillion
+            + $this->usage->outputTokens * $this->variant->price->outputPerMillion) / 1_000_000;
     }
 
     public function toStorageArray(): array
