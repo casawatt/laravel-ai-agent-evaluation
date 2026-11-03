@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.4.0 - 2026-11-03
+
+- Add per-variant `providerOptions()` (e.g. Anthropic `output_config.effort`), merged over the agent's own provider options
+- Forward the agent's `providerOptions()` when a variant wraps it (previously dropped as soon as a variant set an instruction or a generation option)
+
 ## v1.3.0 - 2026-11-02
 
 - Laravel AI 1.3 (`EvaluationResult::$usage` is now a `TextUsage`; use `inputTokens` / `outputTokens`)

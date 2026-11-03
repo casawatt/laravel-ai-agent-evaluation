@@ -97,6 +97,7 @@ abstract class Evaluation
                 $variant->topP,
                 $variant->maxTokens,
                 $variant->maxSteps,
+                $variant->providerOptions,
             );
         }
 

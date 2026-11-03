@@ -96,6 +96,7 @@ class EvaluationResult
             'top_p' => $this->variant->topP,
             'max_tokens' => $this->variant->maxTokens,
             'max_steps' => $this->variant->maxSteps,
+            'provider_options' => $this->variant->providerOptions ?: null,
             'input_cost_per_million' => $this->variant->price?->inputPerMillion,
             'output_cost_per_million' => $this->variant->price?->outputPerMillion,
             'status' => $this->status->value,

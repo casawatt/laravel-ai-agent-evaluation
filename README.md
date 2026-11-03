@@ -145,7 +145,7 @@ public function setUp(): void
 }
 ```
 
-The four options map directly to the Laravel AI SDK's generation parameters:
+These options map directly to the Laravel AI SDK's generation parameters:
 
 | Method | Parameter | Type |
 |--------|-----------|------|
@@ -153,8 +153,17 @@ The four options map directly to the Laravel AI SDK's generation parameters:
 | `->topP(float)` | nucleus sampling (top-p) | `float` |
 | `->maxTokens(int)` | maximum output tokens | `int` |
 | `->maxSteps(int)` | maximum tool-call steps | `int` |
+| `->providerOptions(array)` | provider-specific request options (e.g. Anthropic effort) | `array` |
 
 Any option you leave unset falls back to the value defined on the agent itself (its `temperature()` method or `#[Temperature]` attribute, and so on). When at least one variant sets a generation option, the variant summary table shows a **Params** column (e.g. `temp=0.0 maxTok=512`), and each cell in the HTML report lists the active parameters.
+
+`providerOptions()` is merged over the agent's own `providerOptions()` (when it implements `HasProviderOptions`), the variant winning key by key. Use it to compare the same model at different effort levels:
+
+```php
+$this->variant(Lab::Anthropic, 'claude-sonnet-5-5')
+    ->label('sonnet-5.5-medium')
+    ->providerOptions(['output_config' => ['effort' => 'medium']]);
+```
 
 ### Cost Tracking
 
