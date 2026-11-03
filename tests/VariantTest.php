@@ -81,3 +81,27 @@ it('reconstructs usage from current and legacy stored keys', function (array $us
     'current' => [['input_tokens' => 100, 'output_tokens' => 50]],
     'legacy' => [['prompt_tokens' => 100, 'completion_tokens' => 50]],
 ]);
+
+it('counts provider options as a generation option', function () {
+    $variant = (new Variant(Lab::Anthropic, 'claude-sonnet-5-5'))
+        ->providerOptions(['output_config' => ['effort' => 'medium']]);
+
+    expect($variant->hasGenerationOptions())->toBeTrue();
+});
+
+it('persists and reconstructs provider options', function () {
+    $variant = (new Variant(Lab::Anthropic, 'claude-sonnet-5-5'))
+        ->providerOptions(['output_config' => ['effort' => 'medium']]);
+
+    $data = (new EvaluationResult(
+        evaluationName: 'E',
+        caseName: 'case',
+        caseDescription: 'case',
+        variant: $variant,
+        status: ResultStatus::Passed,
+    ))->toStorageArray();
+
+    expect($data['provider_options'])->toBe(['output_config' => ['effort' => 'medium']])
+        ->and(SuiteBuilder::buildResult($data, 'E')->variant->providerOptions)
+        ->toBe(['output_config' => ['effort' => 'medium']]);
+});

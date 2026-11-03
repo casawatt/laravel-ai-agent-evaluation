@@ -56,6 +56,10 @@ class SuiteBuilder
             $variant->maxSteps($data['max_steps']);
         }
 
+        if (isset($data['provider_options'])) {
+            $variant->providerOptions($data['provider_options']);
+        }
+
         if (isset($data['input_cost_per_million'], $data['output_cost_per_million'])) {
             $variant->pricing($data['input_cost_per_million'], $data['output_cost_per_million']);
         }

@@ -297,6 +297,9 @@ class ConsoleReporter
         if ($variant->maxSteps !== null) {
             $parts[] = 'maxSteps='.$variant->maxSteps;
         }
+        if ($variant->providerOptions !== []) {
+            $parts[] = 'opts='.json_encode($variant->providerOptions, JSON_UNESCAPED_SLASHES);
+        }
 
         return implode(' ', $parts);
     }

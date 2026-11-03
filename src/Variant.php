@@ -20,6 +20,9 @@ class Variant
 
     public ?int $maxSteps = null;
 
+    /** @var array<string, mixed> */
+    public array $providerOptions = [];
+
     public function __construct(
         public readonly Lab|string $provider,
         public readonly string $model,
@@ -102,12 +105,27 @@ class Variant
         return $this;
     }
 
+    /**
+     * Set provider-specific request options (e.g. Anthropic `output_config.effort`).
+     *
+     * They are merged over the agent's own provider options, the variant winning.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    public function providerOptions(array $options): self
+    {
+        $this->providerOptions = $options;
+
+        return $this;
+    }
+
     public function hasGenerationOptions(): bool
     {
         return $this->temperature !== null
             || $this->topP !== null
             || $this->maxTokens !== null
-            || $this->maxSteps !== null;
+            || $this->maxSteps !== null
+            || $this->providerOptions !== [];
     }
 
     public function providerValue(): string

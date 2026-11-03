@@ -6,13 +6,15 @@ use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
 use Laravel\Ai\Contracts\HasMiddleware;
+use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Contracts\HasTools;
+use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Gateway\TextGenerationOptions;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-class AgentDecorator implements Agent, Conversational, HasMiddleware, HasStructuredOutput, HasTools
+class AgentDecorator implements Agent, Conversational, HasMiddleware, HasProviderOptions, HasStructuredOutput, HasTools
 {
     use Promptable;
 
@@ -25,6 +27,7 @@ class AgentDecorator implements Agent, Conversational, HasMiddleware, HasStructu
         private readonly ?float $topP = null,
         private readonly ?int $maxTokens = null,
         private readonly ?int $maxSteps = null,
+        private readonly array $providerOptions = [],
     ) {
         $this->delegateOptions = TextGenerationOptions::forAgent($delegate);
     }
@@ -52,6 +55,20 @@ class AgentDecorator implements Agent, Conversational, HasMiddleware, HasStructu
     public function maxSteps(): ?int
     {
         return $this->maxSteps ?? $this->delegateOptions->maxSteps;
+    }
+
+    /**
+     * The delegate's provider options, overridden by the variant's.
+     *
+     * @return array<string, mixed>
+     */
+    public function providerOptions(Lab|string $provider): array
+    {
+        $delegateOptions = $this->delegate instanceof HasProviderOptions
+            ? $this->delegate->providerOptions($provider)
+            : [];
+
+        return array_replace_recursive($delegateOptions, $this->providerOptions);
     }
 
     public function messages(): iterable

@@ -4,6 +4,8 @@ use Casawatt\LaravelAiAgentEvaluation\AgentDecorator;
 use Casawatt\LaravelAiAgentEvaluation\Tests\Fixtures\FakeAgent;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Contracts\Agent;
+use Laravel\Ai\Contracts\HasProviderOptions;
+use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Promptable;
 
 it('exposes the variant generation options to the SDK', function () {
@@ -69,4 +71,52 @@ it('overrides the delegate instructions with a custom instruction', function () 
     $decorator = new AgentDecorator(new FakeAgent, 'Custom instruction');
 
     expect((string) $decorator->instructions())->toBe('Custom instruction');
+});
+
+it('forwards the delegate provider options', function () {
+    $agent = new class implements Agent, HasProviderOptions
+    {
+        use Promptable;
+
+        public function instructions(): string
+        {
+            return 'delegate';
+        }
+
+        public function providerOptions(Lab|string $provider): array
+        {
+            return ['output_config' => ['effort' => 'low'], 'provider' => $provider instanceof Lab ? $provider->value : $provider];
+        }
+    };
+
+    expect((new AgentDecorator($agent))->providerOptions(Lab::Anthropic))
+        ->toBe(['output_config' => ['effort' => 'low'], 'provider' => 'anthropic']);
+});
+
+it('lets the variant provider options override the delegate ones', function () {
+    $agent = new class implements Agent, HasProviderOptions
+    {
+        use Promptable;
+
+        public function instructions(): string
+        {
+            return 'delegate';
+        }
+
+        public function providerOptions(Lab|string $provider): array
+        {
+            return ['output_config' => ['effort' => 'low', 'format' => 'kept']];
+        }
+    };
+
+    $decorator = new AgentDecorator($agent, providerOptions: ['output_config' => ['effort' => 'medium']]);
+
+    expect($decorator->providerOptions(Lab::Anthropic))
+        ->toBe(['output_config' => ['effort' => 'medium', 'format' => 'kept']]);
+});
+
+it('returns only the variant provider options when the delegate has none', function () {
+    $decorator = new AgentDecorator(new FakeAgent, providerOptions: ['output_config' => ['effort' => 'medium']]);
+
+    expect($decorator->providerOptions(Lab::Anthropic))->toBe(['output_config' => ['effort' => 'medium']]);
 });
